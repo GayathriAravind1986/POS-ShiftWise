@@ -27,7 +27,6 @@ class ThermalReceiptDialog extends StatefulWidget {
 
 class _ThermalReceiptDialogState extends State<ThermalReceiptDialog> {
   late IPrinterService printerService;
-  late IPrinterService printerServiceThermal;
   GlobalKey normalReceiptKey = GlobalKey();
   GlobalKey kotReceiptKey = GlobalKey();
 
@@ -43,13 +42,10 @@ class _ThermalReceiptDialogState extends State<ThermalReceiptDialog> {
     // ipController.text = "192.168.1.123";
     if (kIsWeb) {
       printerService = MockPrinterService();
-      printerServiceThermal = MockPrinterService();
     } else if (Platform.isAndroid) {
       printerService = RealPrinterService();
-      printerServiceThermal = RealPrinterService();
     } else {
       printerService = MockPrinterService();
-      printerServiceThermal = MockPrinterService();
     }
   }
 

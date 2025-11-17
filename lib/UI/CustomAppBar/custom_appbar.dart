@@ -174,7 +174,7 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                   TextButton.icon(
                     onPressed: () => widget.onTabSelected(4),
                     icon: Icon(
-                      Icons.note_alt_outlined,
+                      Icons.shopping_bag_outlined,
                       size: 30,
                       color: widget.selectedIndex == 4
                           ? appPrimaryColor
