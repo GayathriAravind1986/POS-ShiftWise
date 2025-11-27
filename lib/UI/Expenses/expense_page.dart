@@ -6,11 +6,16 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Alertbox/snackBarAlert.dart';
 import 'package:simple/Bloc/Expense/expense_bloc.dart';
-import 'package:simple/ModelClass/HomeScreen/Category&Product/Get_category_model.dart';
+import 'package:simple/ModelClass/Expense/getCategoryByLocationModel.dart';
+import 'package:simple/ModelClass/Expense/getDailyExpenseModel.dart';
+import 'package:simple/ModelClass/Expense/getSingleExpenseModel.dart';
+import 'package:simple/ModelClass/Expense/postExpenseModel.dart';
+import 'package:simple/ModelClass/Expense/putExpenseModel.dart';
 import 'package:simple/ModelClass/StockIn/getLocationModel.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/text_styles.dart';
 import 'package:simple/UI/Authentication/login_screen.dart';
+import 'package:simple/UI/Order/Helper/time_formatter.dart';
 
 class ExpenseView extends StatelessWidget {
   final GlobalKey<ExpenseViewViewState>? expenseKey;
@@ -43,21 +48,52 @@ class ExpenseViewView extends StatefulWidget {
 
 class ExpenseViewViewState extends State<ExpenseViewView> {
   GetLocationModel getLocationModel = GetLocationModel();
-  GetCategoryModel getCategoryModel = GetCategoryModel();
+  GetCategoryByLocationModel getCategoryByLocationModel =
+      GetCategoryByLocationModel();
+  PostExpenseModel postExpenseModel = PostExpenseModel();
+  GetDailyExpenseModel getDailyExpenseModel = GetDailyExpenseModel();
+  GetSingleExpenseModel getSingleExpenseModel = GetSingleExpenseModel();
+  PutExpenseModel putExpenseModel = PutExpenseModel();
   final TextEditingController dateController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController amountController = TextEditingController();
-  String? selectedLocation;
+  TextEditingController searchController = TextEditingController();
   String? selectedCategory;
   String? selectedCategoryFilter;
   String? categoryId;
   String? categoryIdFilter;
   String? selectedPayment;
+  String? selectedPaymentFilter;
   String? locationId;
   List<String> categories = ["Pongal", "Festival", "Food", "Travel"];
-  List<String> paymentMethods = ["Card", "Cash", "Bank Transfer", "UPI"];
+  String mapPaymentForApi(String? payment) {
+    switch (payment) {
+      case "Cash":
+        return "cash";
+      case "Card":
+        return "card";
+      case "UPI":
+        return "upi";
+      case "Bank Transfer":
+        return "bank_transfer";
+      case "Other":
+        return "other";
+      default:
+        return "";
+    }
+  }
+
+  List<String> paymentMethods = [
+    "Card",
+    "Cash",
+    "Bank Transfer",
+    "UPI",
+    "Other"
+  ];
   bool categoryLoad = false;
+  bool saveLoad = false;
+  bool editLoad = false;
   Future<void> pickDate() async {
     DateTime? picked = await showDatePicker(
       context: context,
@@ -92,70 +128,81 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
   }
 
   bool stockLoad = false;
+  bool expenseLoad = false;
+  bool expenseShowLoad = false;
+  bool isEdit = false;
   String? errorMessage;
+  String? expenseId;
 
   void refreshExpense() {
     if (!mounted || !context.mounted) return;
+    final apiPayment = mapPaymentForApi(selectedPaymentFilter ?? "");
     context.read<ExpenseBloc>().add(StockInLocation());
+    context.read<ExpenseBloc>().add(DailyExpense(searchController.text,
+        locationId ?? "", categoryIdFilter ?? "", apiPayment));
     setState(() {
       stockLoad = true;
+      expenseLoad = true;
     });
   }
 
-  final List<Map<String, dynamic>> expenses = [
-    {
-      "date": "24/11/2025",
-      "location": "Andhra",
-      "category": "laddu",
-      "name": "ram",
-      "amount": "₹10.00",
-      "method": "Bank Transfer",
-    },
-    {
-      "date": "15/09/2025",
-      "location": "Ambasamudram",
-      "category": "black forest cake",
-      "name": "sfd",
-      "amount": "₹800.00",
-      "method": "Card",
-    },
-    {
-      "date": "13/08/2025",
-      "location": "Nagercoil",
-      "category": "evt",
-      "name": "abcdee",
-      "amount": "₹38.00",
-      "method": "Cash",
-    },
-  ];
+  void clearExpensesForm() {
+    setState(() {
+      selectedPayment = null;
+      selectedCategory = null;
+      categoryId = null;
+      amountController.clear();
+      nameController.clear();
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     dateController.text =
         "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}";
-    context.read<ExpenseBloc>().add(ProductCategory());
     if (widget.hasRefreshedExpense == true) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         setState(() {
           stockLoad = true;
+          expenseLoad = true;
         });
         widget.expenseKey?.currentState?.refreshExpense();
       });
     } else {
+      final apiPayment = mapPaymentForApi(selectedPaymentFilter ?? "");
       context.read<ExpenseBloc>().add(StockInLocation());
+      context.read<ExpenseBloc>().add(DailyExpense(searchController.text,
+          locationId ?? "", categoryIdFilter ?? "", apiPayment));
       setState(() {
-        stockLoad = true;
+        expenseLoad = true;
       });
     }
   }
 
   void _refreshData() {
     setState(() {
-      // selectedValue = null;
-      // categoryId = null;
+      selectedCategoryFilter = null;
+      selectedPaymentFilter = null;
+      categoryIdFilter = null;
+      stockLoad = true;
+    });
+    final apiPayment = mapPaymentForApi(selectedPaymentFilter ?? "");
+    context.read<ExpenseBloc>().add(StockInLocation());
+    context.read<ExpenseBloc>().add(DailyExpense(searchController.text,
+        locationId ?? "", categoryIdFilter ?? "", apiPayment));
+    widget.expenseKey?.currentState?.refreshExpense();
+  }
+
+  void _refreshEditData() {
+    setState(() {
+      isEdit = false;
+      selectedCategory = null;
+      selectedPayment = null;
+      amountController.clear();
+      nameController.clear();
     });
     context.read<ExpenseBloc>().add(StockInLocation());
-    context.read<ExpenseBloc>().add(ProductCategory());
     widget.expenseKey?.currentState?.refreshExpense();
   }
 
@@ -166,7 +213,6 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
 
   @override
   Widget build(BuildContext context) {
-    var size = MediaQuery.of(context).size;
     Widget mainContainer() {
       return Padding(
         padding: const EdgeInsets.all(20),
@@ -174,14 +220,31 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                "Add Expense",
-                style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              Row(
+                children: [
+                  Text(
+                    isEdit ? "Edit Expense" : "Add Expense",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  if (isEdit)
+                    IconButton(
+                      onPressed: () {
+                        _refreshEditData();
+                      },
+                      icon: const Icon(
+                        Icons.refresh,
+                        color: appPrimaryColor,
+                        size: 28,
+                      ),
+                      tooltip: 'Refresh Products',
+                    ),
+                ],
               ),
 
               const SizedBox(height: 20),
 
               // ---------------- Row 1 ----------------
+
               Row(
                 children: [
                   Expanded(
@@ -227,7 +290,7 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
                 children: [
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: (getCategoryModel.data?.any(
+                      value: (getCategoryByLocationModel.data?.any(
                                   (item) => item.name == selectedCategory) ??
                               false)
                           ? selectedCategory
@@ -245,7 +308,7 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
                           ),
                         ),
                       ),
-                      items: getCategoryModel.data?.map((item) {
+                      items: getCategoryByLocationModel.data?.map((item) {
                         return DropdownMenuItem<String>(
                           value: item.name,
                           child: Text(
@@ -261,7 +324,7 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
                         if (newValue != null) {
                           setState(() {
                             selectedCategory = newValue;
-                            final selectedItem = getCategoryModel.data
+                            final selectedItem = getCategoryByLocationModel.data
                                 ?.firstWhere((item) => item.name == newValue);
                             categoryId = selectedItem?.id.toString();
                           });
@@ -289,6 +352,7 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
                       onChanged: (v) => setState(() => selectedPayment = v),
                       decoration: const InputDecoration(
                         labelText: "Payment Method *",
+                        labelStyle: TextStyle(color: appPrimaryColor),
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -325,22 +389,135 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
               ),
 
               const SizedBox(height: 30),
-
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 40, vertical: 15),
-                  ),
-                  child: const Text(
-                    "SAVE",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                ),
-              ),
+              isEdit == true
+                  ? Center(
+                      child: editLoad
+                          ? SpinKitCircle(color: appPrimaryColor, size: 30)
+                          : ElevatedButton(
+                              onPressed: () {
+                                final parsed = DateFormat("dd/MM/yyyy")
+                                    .parse(dateController.text);
+                                final backendDate =
+                                    DateFormat("yyyy-MM-dd").format(parsed);
+                                debugPrint("date:$backendDate");
+                                if (getLocationModel.data!.locationName ==
+                                    null) {
+                                  showToast("Location not found", context,
+                                      color: false);
+                                } else if (selectedCategory == null) {
+                                  showToast("Select Category", context,
+                                      color: false);
+                                } else if (selectedPayment == null) {
+                                  showToast("Select payment method", context,
+                                      color: false);
+                                } else if (nameController.text.isEmpty) {
+                                  showToast("Enter category name", context,
+                                      color: false);
+                                } else if (amountController.text.isEmpty) {
+                                  showToast("Enter amount", context,
+                                      color: false);
+                                } else {
+                                  setState(() {
+                                    editLoad = true;
+                                    context.read<ExpenseBloc>().add(
+                                        UpdateExpense(
+                                            expenseId.toString(),
+                                            backendDate,
+                                            categoryId.toString(),
+                                            nameController.text,
+                                            selectedPayment == "Cash"
+                                                ? "cash"
+                                                : selectedPayment == "Card"
+                                                    ? "card"
+                                                    : selectedPayment == "UPI"
+                                                        ? "upi"
+                                                        : selectedPayment ==
+                                                                "Bank Transfer"
+                                                            ? "bank_transfer"
+                                                            : "other",
+                                            amountController.text,
+                                            locationId.toString()));
+                                  });
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: appPrimaryColor,
+                                minimumSize: const Size(0, 50), // Height only
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              child: const Text(
+                                "Update Expense",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
+                              ),
+                            ),
+                    )
+                  : Center(
+                      child: saveLoad
+                          ? SpinKitCircle(color: appPrimaryColor, size: 30)
+                          : ElevatedButton(
+                              onPressed: () {
+                                final parsed = DateFormat("dd/MM/yyyy")
+                                    .parse(dateController.text);
+                                final backendDate =
+                                    DateFormat("yyyy-MM-dd").format(parsed);
+                                debugPrint("date:$backendDate");
+                                if (getLocationModel.data!.locationName ==
+                                    null) {
+                                  showToast("Location not found", context,
+                                      color: false);
+                                } else if (selectedCategory == null) {
+                                  showToast("Select Category", context,
+                                      color: false);
+                                } else if (selectedPayment == null) {
+                                  showToast("Select payment method", context,
+                                      color: false);
+                                } else if (nameController.text.isEmpty) {
+                                  showToast("Enter category name", context,
+                                      color: false);
+                                } else if (amountController.text.isEmpty) {
+                                  showToast("Enter amount", context,
+                                      color: false);
+                                } else {
+                                  setState(() {
+                                    saveLoad = true;
+                                    context.read<ExpenseBloc>().add(SaveExpense(
+                                        backendDate,
+                                        categoryId.toString(),
+                                        nameController.text,
+                                        selectedPayment == "Cash"
+                                            ? "cash"
+                                            : selectedPayment == "Card"
+                                                ? "card"
+                                                : selectedPayment == "UPI"
+                                                    ? "upi"
+                                                    : selectedPayment ==
+                                                            "Bank Transfer"
+                                                        ? "bank_transfer"
+                                                        : "other",
+                                        amountController.text,
+                                        locationId.toString()));
+                                  });
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: appPrimaryColor,
+                                minimumSize: const Size(0, 50), // Height only
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                              child: const Text(
+                                "SAVE",
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
+                              ),
+                            ),
+                    ),
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -364,17 +541,34 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
                   Expanded(
                     flex: 2,
                     child: TextField(
+                      controller: searchController,
                       decoration: InputDecoration(
-                        labelText: "Search by name...",
-                        prefixIcon: const Icon(Icons.search),
+                        hintText: 'Search by name...',
+                        prefixIcon: Icon(Icons.search),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16),
                         border: OutlineInputBorder(),
                       ),
+                      onChanged: (value) {
+                        searchController
+                          ..text = (value)
+                          ..selection = TextSelection.collapsed(
+                              offset: searchController.text.length);
+                        setState(() {
+                          final apiPayment =
+                              mapPaymentForApi(selectedPaymentFilter ?? "");
+                          context.read<ExpenseBloc>().add(DailyExpense(
+                              searchController.text,
+                              locationId ?? "",
+                              categoryIdFilter ?? "",
+                              apiPayment));
+                        });
+                      },
                     ),
                   ),
                   const SizedBox(width: 15),
                   Expanded(
                     child: DropdownButtonFormField<String>(
-                      value: (getCategoryModel.data?.any((item) =>
+                      value: (getCategoryByLocationModel.data?.any((item) =>
                                   item.name == selectedCategoryFilter) ??
                               false)
                           ? selectedCategoryFilter
@@ -392,7 +586,7 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
                           ),
                         ),
                       ),
-                      items: getCategoryModel.data?.map((item) {
+                      items: getCategoryByLocationModel.data?.map((item) {
                         return DropdownMenuItem<String>(
                           value: item.name,
                           child: Text(
@@ -408,9 +602,16 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
                         if (newValue != null) {
                           setState(() {
                             selectedCategoryFilter = newValue;
-                            final selectedItem = getCategoryModel.data
+                            final selectedItem = getCategoryByLocationModel.data
                                 ?.firstWhere((item) => item.name == newValue);
                             categoryIdFilter = selectedItem?.id.toString();
+                            final apiPayment =
+                                mapPaymentForApi(selectedPaymentFilter ?? "");
+                            context.read<ExpenseBloc>().add(DailyExpense(
+                                searchController.text,
+                                locationId ?? "",
+                                categoryIdFilter ?? "",
+                                apiPayment));
                           });
                         }
                       },
@@ -426,30 +627,48 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
                   const SizedBox(width: 15),
                   Expanded(
                     child: DropdownButtonFormField<String>(
+                      value: selectedPaymentFilter,
+                      items: paymentMethods
+                          .map((p) => DropdownMenuItem(
+                                value: p,
+                                child: Text(p),
+                              ))
+                          .toList(),
+                      onChanged: (v) {
+                        setState(() {
+                          selectedPaymentFilter = v;
+                          final apiPayment =
+                              mapPaymentForApi(selectedPaymentFilter ?? "");
+
+                          context.read<ExpenseBloc>().add(DailyExpense(
+                              searchController.text,
+                              locationId ?? "",
+                              categoryIdFilter ?? "",
+                              apiPayment));
+                        });
+                      },
                       decoration: const InputDecoration(
-                        labelText: "Payment Method",
+                        labelText: "Payment Method *",
+                        labelStyle: TextStyle(color: appPrimaryColor),
                         border: OutlineInputBorder(),
                       ),
-                      items: [
-                        "All Methods",
-                        "Cash",
-                        "UPI",
-                        "Card",
-                        "Bank Transfer"
-                      ]
-                          .map(
-                              (e) => DropdownMenuItem(value: e, child: Text(e)))
-                          .toList(),
-                      onChanged: (v) {},
-                      value: "All Methods",
                     ),
                   ),
                   const SizedBox(width: 15),
                   ElevatedButton(
-                    onPressed: () {},
-                    style:
-                        ElevatedButton.styleFrom(backgroundColor: Colors.grey),
-                    child: const Text("CLEAR FILTERS"),
+                    onPressed: () {
+                      _refreshData();
+                    },
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: appPrimaryColor,
+                        minimumSize: const Size(0, 50), // Height only
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        )),
+                    child: const Text(
+                      "CLEAR FILTERS",
+                      style: TextStyle(color: whiteColor),
+                    ),
                   ),
                 ],
               ),
@@ -458,169 +677,215 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
 
               // Replace your DataTable widget with this responsive version
 
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  // Calculate column widths based on available screen width
-                  final availableWidth = constraints.maxWidth;
+              expenseLoad
+                  ? Container(
+                      padding: EdgeInsets.only(
+                          top: MediaQuery.of(context).size.height * 0.1),
+                      alignment: Alignment.center,
+                      child: const SpinKitChasingDots(
+                          color: appPrimaryColor, size: 30))
+                  : getDailyExpenseModel.data == null ||
+                          getDailyExpenseModel.data == [] ||
+                          getDailyExpenseModel.data!.isEmpty
+                      ? Container(
+                          padding: EdgeInsets.only(
+                              top: MediaQuery.of(context).size.height * 0.1),
+                          alignment: Alignment.center,
+                          child: Text(
+                            "No Expenses Today !!!",
+                            style: MyTextStyle.f16(
+                              greyColor,
+                              weight: FontWeight.w500,
+                            ),
+                          ))
+                      : LayoutBuilder(
+                          builder: (context, constraints) {
+                            // Calculate column widths based on available screen width
+                            final availableWidth = constraints.maxWidth;
 
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minWidth:
-                            availableWidth, // Ensures table takes full width
-                      ),
-                      child: DataTable(
-                        headingRowColor:
-                            MaterialStateProperty.all(Colors.grey.shade200),
-                        dataRowHeight: 55,
-                        headingTextStyle: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                          fontSize: 14,
-                        ),
-                        columnSpacing:
-                            availableWidth * 0.02, // 2% of screen width
-                        columns: [
-                          DataColumn(
-                            label: SizedBox(
-                              width: availableWidth * 0.12,
-                              child: const Text("Date"),
-                            ),
-                          ),
-                          DataColumn(
-                            label: SizedBox(
-                              width: availableWidth * 0.15,
-                              child: const Text("Location"),
-                            ),
-                          ),
-                          DataColumn(
-                            label: SizedBox(
-                              width: availableWidth * 0.15,
-                              child: const Text("Category"),
-                            ),
-                          ),
-                          DataColumn(
-                            label: SizedBox(
-                              width: availableWidth * 0.15,
-                              child: const Text("Name"),
-                            ),
-                          ),
-                          DataColumn(
-                            label: SizedBox(
-                              width: availableWidth * 0.12,
-                              child: const Text("Amount"),
-                            ),
-                          ),
-                          DataColumn(
-                            label: SizedBox(
-                              width: availableWidth * 0.16,
-                              child: const Text("Payment Method"),
-                            ),
-                          ),
-                          DataColumn(
-                            label: SizedBox(
-                              width: availableWidth * 0.13,
-                              child: const Text("Actions"),
-                            ),
-                          ),
-                        ],
-                        rows: expenses.map((item) {
-                          return DataRow(
-                            cells: [
-                              DataCell(
-                                SizedBox(
-                                  width: availableWidth * 0.12,
-                                  child: Text(
-                                    item["date"],
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  minWidth:
+                                      availableWidth, // Ensures table takes full width
                                 ),
-                              ),
-                              DataCell(
-                                SizedBox(
-                                  width: availableWidth * 0.15,
-                                  child: Text(
-                                    item["location"],
-                                    overflow: TextOverflow.ellipsis,
+                                child: Theme(
+                                  data: Theme.of(context).copyWith(
+                                    dataTableTheme: const DataTableThemeData(
+                                      dataRowMinHeight: 40,
+                                      dataRowMaxHeight: 40,
+                                    ),
                                   ),
-                                ),
-                              ),
-                              DataCell(
-                                SizedBox(
-                                  width: availableWidth * 0.15,
-                                  child: Text(
-                                    item["category"],
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                              DataCell(
-                                SizedBox(
-                                  width: availableWidth * 0.15,
-                                  child: Text(
-                                    item["name"],
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                              DataCell(
-                                SizedBox(
-                                  width: availableWidth * 0.12,
-                                  child: Text(
-                                    item["amount"],
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                              DataCell(
-                                SizedBox(
-                                  width: availableWidth * 0.16,
-                                  child: Text(
-                                    item["method"],
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
-                              DataCell(
-                                SizedBox(
-                                  width: availableWidth * 0.13,
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.edit,
-                                          color: Colors.blue,
-                                          size: 18,
+                                  child: DataTable(
+                                    headingRowColor: MaterialStateProperty.all(
+                                        Colors.grey.shade200),
+                                    dataRowHeight: 55,
+                                    headingTextStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                      fontSize: 14,
+                                    ),
+                                    columnSpacing: availableWidth *
+                                        0.02, // 2% of screen width
+                                    columns: [
+                                      DataColumn(
+                                        label: SizedBox(
+                                          width: availableWidth * 0.12,
+                                          child: const Text("Date"),
                                         ),
-                                        onPressed: () {},
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
                                       ),
-                                      const SizedBox(width: 8),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.delete,
-                                          color: Colors.red,
-                                          size: 18,
+                                      DataColumn(
+                                        label: SizedBox(
+                                          width: availableWidth * 0.15,
+                                          child: const Text("Location"),
                                         ),
-                                        onPressed: () {},
-                                        padding: EdgeInsets.zero,
-                                        constraints: const BoxConstraints(),
+                                      ),
+                                      DataColumn(
+                                        label: SizedBox(
+                                          width: availableWidth * 0.15,
+                                          child: const Text("Category"),
+                                        ),
+                                      ),
+                                      DataColumn(
+                                        label: SizedBox(
+                                          width: availableWidth * 0.15,
+                                          child: const Text("Name"),
+                                        ),
+                                      ),
+                                      DataColumn(
+                                        label: SizedBox(
+                                          width: availableWidth * 0.12,
+                                          child: const Text("Amount"),
+                                        ),
+                                      ),
+                                      DataColumn(
+                                        label: SizedBox(
+                                          width: availableWidth * 0.16,
+                                          child: const Text("Payment Method"),
+                                        ),
+                                      ),
+                                      DataColumn(
+                                        label: SizedBox(
+                                          width: availableWidth * 0.13,
+                                          child: const Text("Actions"),
+                                        ),
                                       ),
                                     ],
+                                    rows:
+                                        getDailyExpenseModel.data!.map((item) {
+                                      return DataRow(
+                                        cells: [
+                                          DataCell(
+                                            SizedBox(
+                                              width: availableWidth * 0.12,
+                                              child: Text(
+                                                formatDate(
+                                                    item.date.toString()),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                          DataCell(
+                                            SizedBox(
+                                              width: availableWidth * 0.15,
+                                              child: Text(
+                                                item.locationId?.name ?? "",
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                          DataCell(
+                                            SizedBox(
+                                              width: availableWidth * 0.15,
+                                              child: Text(
+                                                item.categoryId?.name ?? "",
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                          DataCell(
+                                            SizedBox(
+                                              width: availableWidth * 0.15,
+                                              child: Text(
+                                                item.name ?? "",
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                          DataCell(
+                                            SizedBox(
+                                              width: availableWidth * 0.12,
+                                              child: Text(
+                                                item.amount.toString(),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                          DataCell(
+                                            SizedBox(
+                                              width: availableWidth * 0.16,
+                                              child: Text(
+                                                item.paymentMethod ?? "",
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ),
+                                          DataCell(
+                                            SizedBox(
+                                              width: availableWidth * 0.13,
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  IconButton(
+                                                    icon: const Icon(
+                                                      Icons.edit,
+                                                      color: appPrimaryColor,
+                                                      size: 18,
+                                                    ),
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        isEdit = true;
+                                                        expenseId =
+                                                            item.id.toString();
+                                                        debugPrint(
+                                                            "isEdit_$isEdit");
+                                                      });
+                                                      context
+                                                          .read<ExpenseBloc>()
+                                                          .add(ExpenseById(item
+                                                              .id
+                                                              .toString()));
+                                                    },
+                                                    padding: EdgeInsets.zero,
+                                                    constraints:
+                                                        const BoxConstraints(),
+                                                  ),
+                                                  // const SizedBox(width: 8),
+                                                  // IconButton(
+                                                  //   icon: const Icon(
+                                                  //     Icons.delete,
+                                                  //     color: Colors.red,
+                                                  //     size: 18,
+                                                  //   ),
+                                                  //   onPressed: () {},
+                                                  //   padding: EdgeInsets.zero,
+                                                  //   constraints:
+                                                  //       const BoxConstraints(),
+                                                  // ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }).toList(),
                                   ),
                                 ),
                               ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  );
-                },
-              )
+                            );
+                          },
+                        )
             ],
           ),
         ),
@@ -638,6 +903,10 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
           if (getLocationModel.success == true) {
             locationId = getLocationModel.data?.locationId;
             debugPrint("locationId:$locationId");
+            debugPrint("locationId:$locationId");
+            context
+                .read<ExpenseBloc>()
+                .add(CategoryByLocation(locationId.toString()));
             setState(() {
               stockLoad = false;
             });
@@ -650,16 +919,115 @@ class ExpenseViewViewState extends State<ExpenseViewView> {
           }
           return true;
         }
-        if (current is GetCategoryModel) {
-          getCategoryModel = current;
-          if (getCategoryModel.success == true) {
+        if (current is GetCategoryByLocationModel) {
+          getCategoryByLocationModel = current;
+          if (getCategoryByLocationModel.success == true) {
             setState(() {
               categoryLoad = false;
             });
           }
-          if (getCategoryModel.errorResponse?.isUnauthorized == true) {
+          if (getCategoryByLocationModel.errorResponse?.isUnauthorized ==
+              true) {
             _handle401Error();
             return true;
+          }
+          return true;
+        }
+        if (current is PostExpenseModel) {
+          postExpenseModel = current;
+          if (postExpenseModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (postExpenseModel.success == true) {
+            showToast("Expense Added Successfully", context, color: true);
+            final apiPayment = mapPaymentForApi(selectedPaymentFilter ?? "");
+            context.read<ExpenseBloc>().add(DailyExpense(searchController.text,
+                locationId ?? "", categoryIdFilter ?? "", apiPayment));
+            Future.delayed(Duration(milliseconds: 100), () {
+              clearExpensesForm();
+            });
+            setState(() {
+              saveLoad = false;
+            });
+          } else {
+            setState(() {
+              saveLoad = false;
+            });
+          }
+          return true;
+        }
+        if (current is GetDailyExpenseModel) {
+          getDailyExpenseModel = current;
+          if (getDailyExpenseModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (getDailyExpenseModel.success == true) {
+            setState(() {
+              expenseLoad = false;
+            });
+          } else {
+            setState(() {
+              expenseLoad = false;
+            });
+            showToast("No Expenses found", context, color: false);
+          }
+          return true;
+        }
+        if (current is GetSingleExpenseModel) {
+          getSingleExpenseModel = current;
+          if (getSingleExpenseModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (getSingleExpenseModel.success == true) {
+            setState(() {
+              if (getSingleExpenseModel.data != null) {
+                dateController.text =
+                    formatDate(getSingleExpenseModel.data!.date.toString());
+                selectedCategory =
+                    getSingleExpenseModel.data!.categoryId!.name ?? "";
+                categoryId = getSingleExpenseModel.data!.categoryId!.id ?? "";
+                nameController.text = getSingleExpenseModel.data!.name ?? "";
+                amountController.text =
+                    int.parse(getSingleExpenseModel.data!.amount.toString())
+                        .toString();
+                selectedPayment =
+                    getSingleExpenseModel.data!.paymentMethod ?? "";
+              }
+              expenseShowLoad = false;
+            });
+          } else {
+            setState(() {
+              expenseShowLoad = false;
+            });
+            // showToast("No Expenses found", context, color: false);
+          }
+          return true;
+        }
+        if (current is PutExpenseModel) {
+          putExpenseModel = current;
+          if (putExpenseModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (putExpenseModel.success == true) {
+            showToast("Expense Updated Successfully", context, color: true);
+            _refreshEditData();
+            final apiPayment = mapPaymentForApi(selectedPaymentFilter ?? "");
+            context.read<ExpenseBloc>().add(DailyExpense(searchController.text,
+                locationId ?? "", categoryIdFilter ?? "", apiPayment));
+            Future.delayed(Duration(milliseconds: 100), () {
+              clearExpensesForm();
+            });
+            setState(() {
+              editLoad = false;
+            });
+          } else {
+            setState(() {
+              editLoad = false;
+            });
           }
           return true;
         }

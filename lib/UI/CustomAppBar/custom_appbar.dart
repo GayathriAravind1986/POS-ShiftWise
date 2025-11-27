@@ -105,7 +105,7 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
 
                 // Navigation Tabs
                 Expanded(
-                  flex: isCompactMode ? 5 : 12,
+                  flex: isCompactMode ? 5 : 15,
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -165,6 +165,14 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
                           index: 5,
                           isSelected: widget.selectedIndex == 5,
                           onPressed: () => widget.onTabSelected(5),
+                          isCompact: isCompactMode,
+                        ),
+                        _buildNavButton(
+                          icon: Icons.south_east,
+                          label: "ShiftClose",
+                          index: 6,
+                          isSelected: widget.selectedIndex == 6,
+                          onPressed: () => widget.onTabSelected(6),
                           isCompact: isCompactMode,
                         ),
                       ],
@@ -228,7 +236,7 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
       onPressed: onPressed,
       icon: Icon(
         icon,
-        size: isCompact ? 24 : 30,
+        size: 24,
         color: isSelected ? appPrimaryColor : greyColor,
       ),
       label: Text(
@@ -236,11 +244,11 @@ class CustomAppBarViewState extends State<CustomAppBarView> {
         style: MyTextStyle.f16(
           weight: FontWeight.bold,
           isSelected ? appPrimaryColor : greyColor,
-        ).copyWith(fontSize: isCompact ? 14 : 16),
+        ).copyWith(fontSize: 15),
       ),
       style: TextButton.styleFrom(
         padding: EdgeInsets.symmetric(
-          horizontal: isCompact ? 4 : 8,
+          horizontal: isCompact ? 4 : 6,
           vertical: 8,
         ),
       ),
