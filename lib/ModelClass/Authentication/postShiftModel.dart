@@ -1,27 +1,25 @@
 import 'package:simple/Bloc/Response/errorResponse.dart';
 
 /// success : true
-/// token : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NTJmNDZmMGNjY2NmYWVjNTQ3NzZjYyIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc1MTg2OTQ1MCwiZXhwIjoxNzUxOTU1ODUwfQ.IXYF7idvNgeEMXVgZ7faiWuV9r7-cjtv91S88fi3lsU"
+/// message : "success"
+/// data : {"_id":"692529b1cce96462c4696340","name":"Mathan","email":"mathan@gmail.com","role":"OPERATOR","locationId":"6890d1700eb176a5bfc48b2a","isWaiter":false,"active":true,"createdAt":"2025-11-25T03:59:45.891Z","__v":1,"shift":"2","shiftData":["hi","hello"]}
 
-class PostLoginModel {
-  PostLoginModel({
+class PostShiftModel {
+  PostShiftModel({
     bool? success,
-    String? token,
-    User? user,
     String? message,
+    Data? data,
     ErrorResponse? errorResponse,
   }) {
     _success = success;
-    _token = token;
-    _user = user;
     _message = message;
+    _data = data;
   }
 
-  PostLoginModel.fromJson(dynamic json) {
+  PostShiftModel.fromJson(dynamic json) {
     _success = json['success'];
-    _token = json['token'];
-    _user = json['user'] != null ? User.fromJson(json['user']) : null;
     _message = json['message'];
+    _data = json['data'] != null ? Data.fromJson(json['data']) : null;
     if (json['errors'] != null && json['errors'] is Map<String, dynamic>) {
       errorResponse = ErrorResponse.fromJson(json['errors']);
     } else {
@@ -29,35 +27,30 @@ class PostLoginModel {
     }
   }
   bool? _success;
-  String? _token;
-  User? _user;
   String? _message;
+  Data? _data;
   ErrorResponse? errorResponse;
-  PostLoginModel copyWith({
+  PostShiftModel copyWith({
     bool? success,
-    String? token,
-    User? user,
     String? message,
+    Data? data,
   }) =>
-      PostLoginModel(
+      PostShiftModel(
         success: success ?? _success,
-        token: token ?? _token,
-        user: user ?? _user,
         message: message ?? _message,
+        data: data ?? _data,
       );
   bool? get success => _success;
-  String? get token => _token;
-  User? get user => _user;
   String? get message => _message;
+  Data? get data => _data;
 
   Map<String, dynamic> toJson() {
     final map = <String, dynamic>{};
     map['success'] = _success;
-    map['token'] = _token;
-    if (_user != null) {
-      map['user'] = _user?.toJson();
-    }
     map['message'] = _message;
+    if (_data != null) {
+      map['data'] = _data?.toJson();
+    }
     if (errorResponse != null) {
       map['errors'] = errorResponse!.toJson();
     }
@@ -65,22 +58,23 @@ class PostLoginModel {
   }
 }
 
-/// _id : "689093c0c7d1edb058a9bc6e"
-/// name : "Counter1"
-/// email : "counter1@gmail.com"
-/// password : "$2b$10$jIwJtQyZdNMNmxWiSNZ0VepS0HjnaZYKOPATrkimPjm78oeklBrLu"
+/// _id : "692529b1cce96462c4696340"
+/// name : "Mathan"
+/// email : "mathan@gmail.com"
 /// role : "OPERATOR"
-/// locationId : "68903a7bf7a56be2b7654f2f"
+/// locationId : "6890d1700eb176a5bfc48b2a"
+/// isWaiter : false
 /// active : true
-/// createdAt : "2025-08-04T11:04:32.178Z"
-/// __v : 0
+/// createdAt : "2025-11-25T03:59:45.891Z"
+/// __v : 1
+/// shift : "2"
+/// shiftData : ["hi","hello"]
 
-class User {
-  User({
+class Data {
+  Data({
     String? id,
     String? name,
     String? email,
-    String? password,
     String? role,
     String? locationId,
     bool? isWaiter,
@@ -93,7 +87,6 @@ class User {
     _id = id;
     _name = name;
     _email = email;
-    _password = password;
     _role = role;
     _locationId = locationId;
     _isWaiter = isWaiter;
@@ -104,11 +97,10 @@ class User {
     _shiftData = shiftData;
   }
 
-  User.fromJson(dynamic json) {
+  Data.fromJson(dynamic json) {
     _id = json['_id'];
     _name = json['name'];
     _email = json['email'];
-    _password = json['password'];
     _role = json['role'];
     _locationId = json['locationId'];
     _isWaiter = json['isWaiter'];
@@ -122,7 +114,6 @@ class User {
   String? _id;
   String? _name;
   String? _email;
-  String? _password;
   String? _role;
   String? _locationId;
   bool? _isWaiter;
@@ -131,11 +122,10 @@ class User {
   num? _v;
   String? _shift;
   List<String>? _shiftData;
-  User copyWith({
+  Data copyWith({
     String? id,
     String? name,
     String? email,
-    String? password,
     String? role,
     String? locationId,
     bool? isWaiter,
@@ -145,11 +135,10 @@ class User {
     String? shift,
     List<String>? shiftData,
   }) =>
-      User(
+      Data(
         id: id ?? _id,
         name: name ?? _name,
         email: email ?? _email,
-        password: password ?? _password,
         role: role ?? _role,
         locationId: locationId ?? _locationId,
         isWaiter: isWaiter ?? _isWaiter,
@@ -162,7 +151,6 @@ class User {
   String? get id => _id;
   String? get name => _name;
   String? get email => _email;
-  String? get password => _password;
   String? get role => _role;
   String? get locationId => _locationId;
   bool? get isWaiter => _isWaiter;
@@ -177,7 +165,6 @@ class User {
     map['_id'] = _id;
     map['name'] = _name;
     map['email'] = _email;
-    map['password'] = _password;
     map['role'] = _role;
     map['locationId'] = _locationId;
     map['isWaiter'] = _isWaiter;

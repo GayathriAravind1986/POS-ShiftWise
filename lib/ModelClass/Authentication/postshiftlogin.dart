@@ -1,15 +1,14 @@
-import 'package:simple/Bloc/Response/errorResponse.dart';
-
 /// success : true
-/// token : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NTJmNDZmMGNjY2NmYWVjNTQ3NzZjYyIsInJvbGUiOiJBRE1JTiIsImlhdCI6MTc1MTg2OTQ1MCwiZXhwIjoxNzUxOTU1ODUwfQ.IXYF7idvNgeEMXVgZ7faiWuV9r7-cjtv91S88fi3lsU"
+/// token : "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MjUyOWIxY2NlOTY0NjJjNDY5NjM0MCIsInJvbGUiOiJPUEVSQVRPUiIsImxvY2F0aW9uSWQiOiI2ODkwZDE3MDBlYjE3NmE1YmZjNDhiMmEiLCJpYXQiOjE3NjQ4MjQ1NTAsImV4cCI6MTc2NDkxMDk1MH0.IlXNCMmR0qwl1SA0BPb0jBAqxHAKIjaWyBtVPDPfHWI"
+/// user : {"_id":"692529b1cce96462c4696340","name":"Mathan","email":"mathan@gmail.com","password":"$2b$10$ewmBcVxJAtpp6kblbVJoauvCQXt3fcs9prMOeG5HByfdp9Hd1OGF6","role":"OPERATOR","locationId":"6890d1700eb176a5bfc48b2a","isWaiter":false,"active":true,"createdAt":"2025-11-25T03:59:45.891Z","__v":1,"shift":"2","shiftData":["hi","hello"]}
+/// message : "User logged in successfully"
 
-class PostLoginModel {
-  PostLoginModel({
+class Postshiftlogin {
+  Postshiftlogin({
     bool? success,
     String? token,
     User? user,
     String? message,
-    ErrorResponse? errorResponse,
   }) {
     _success = success;
     _token = token;
@@ -17,29 +16,23 @@ class PostLoginModel {
     _message = message;
   }
 
-  PostLoginModel.fromJson(dynamic json) {
+  Postshiftlogin.fromJson(dynamic json) {
     _success = json['success'];
     _token = json['token'];
     _user = json['user'] != null ? User.fromJson(json['user']) : null;
     _message = json['message'];
-    if (json['errors'] != null && json['errors'] is Map<String, dynamic>) {
-      errorResponse = ErrorResponse.fromJson(json['errors']);
-    } else {
-      errorResponse = null;
-    }
   }
   bool? _success;
   String? _token;
   User? _user;
   String? _message;
-  ErrorResponse? errorResponse;
-  PostLoginModel copyWith({
+  Postshiftlogin copyWith({
     bool? success,
     String? token,
     User? user,
     String? message,
   }) =>
-      PostLoginModel(
+      Postshiftlogin(
         success: success ?? _success,
         token: token ?? _token,
         user: user ?? _user,
@@ -58,22 +51,22 @@ class PostLoginModel {
       map['user'] = _user?.toJson();
     }
     map['message'] = _message;
-    if (errorResponse != null) {
-      map['errors'] = errorResponse!.toJson();
-    }
     return map;
   }
 }
 
-/// _id : "689093c0c7d1edb058a9bc6e"
-/// name : "Counter1"
-/// email : "counter1@gmail.com"
-/// password : "$2b$10$jIwJtQyZdNMNmxWiSNZ0VepS0HjnaZYKOPATrkimPjm78oeklBrLu"
+/// _id : "692529b1cce96462c4696340"
+/// name : "Mathan"
+/// email : "mathan@gmail.com"
+/// password : "$2b$10$ewmBcVxJAtpp6kblbVJoauvCQXt3fcs9prMOeG5HByfdp9Hd1OGF6"
 /// role : "OPERATOR"
-/// locationId : "68903a7bf7a56be2b7654f2f"
+/// locationId : "6890d1700eb176a5bfc48b2a"
+/// isWaiter : false
 /// active : true
-/// createdAt : "2025-08-04T11:04:32.178Z"
-/// __v : 0
+/// createdAt : "2025-11-25T03:59:45.891Z"
+/// __v : 1
+/// shift : "2"
+/// shiftData : ["hi","hello"]
 
 class User {
   User({

@@ -5,6 +5,7 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:simple/Alertbox/snackBarAlert.dart';
 import 'package:simple/Bloc/Authentication/login_bloc.dart';
 import 'package:simple/ModelClass/Authentication/Post_login_model.dart';
+import 'package:simple/ModelClass/Authentication/postShiftModel.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/customTextfield.dart';
 import 'package:simple/Reusable/space.dart';
@@ -35,7 +36,7 @@ class LoginScreenView extends StatefulWidget {
 
 class LoginScreenViewState extends State<LoginScreenView> {
   PostLoginModel postLoginModel = PostLoginModel();
-
+  PostShiftModel postShiftModel = PostShiftModel();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   TextEditingController email = TextEditingController();
   TextEditingController password = TextEditingController();
@@ -43,6 +44,8 @@ class LoginScreenViewState extends State<LoginScreenView> {
   String? errorMessage;
   var showPassword = true;
   bool loginLoad = false;
+  bool shiftLoad = false;
+  String? selectedShift;
   @override
   void initState() {
     super.initState();
@@ -51,6 +54,141 @@ class LoginScreenViewState extends State<LoginScreenView> {
   @override
   void dispose() {
     super.dispose();
+  }
+
+  void showShiftPopup(BuildContext context, Size size, Data user) {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent closing by clicking outside
+      builder: (context2) {
+        return BlocProvider(
+          create: (context) => LoginInBloc(),
+          child: BlocProvider.value(
+            value: BlocProvider.of<LoginInBloc>(context, listen: false),
+            child: StatefulBuilder(builder: (context, setState) {
+              return Dialog(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                backgroundColor: whiteColor,
+                child: Container(
+                  width: size.width * 0.3,
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // -------- HEADER -------- //
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            "Select Shift",
+                            style: TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.close),
+                            onPressed: () => Navigator.pop(context),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+
+                      // -------- USER DETAILS -------- //
+                      Text("Welcome, ${user.name}",
+                          style: const TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w500)),
+                      Text("Role: ${user.role}",
+                          style: const TextStyle(
+                              fontSize: 14, color: Colors.grey)),
+                      const SizedBox(height: 20),
+
+                      // -------- Dropdown -------- //
+                      const Text("Choose your shift"),
+                      const SizedBox(height: 6),
+
+                      StatefulBuilder(
+                        builder: (context, setStateDialog) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.black54),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: selectedShift,
+                                isExpanded: true,
+                                hint: const Text("-- Select Shift --"),
+                                items: user.shiftData
+                                    ?.map((shift) => DropdownMenuItem(
+                                          value: shift,
+                                          child: Text(shift),
+                                        ))
+                                    .toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    selectedShift = value;
+                                    debugPrint("selectedShift:$selectedShift");
+                                  });
+                                },
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+
+                      const SizedBox(height: 20),
+                      loginLoad
+                          ? const SpinKitCircle(
+                              color: appPrimaryColor, size: 30)
+                          : InkWell(
+                              onTap: () {
+                                if (selectedShift == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      backgroundColor: redColor,
+                                      content: const Text(
+                                        "Please select your shift",
+                                        style: TextStyle(
+                                          color: whiteColor,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      behavior: SnackBarBehavior.floating,
+                                      margin: EdgeInsets.all(
+                                          16), // Optional: rounded floating style
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                setState(() {
+                                  loginLoad = true;
+                                });
+                                context.read<LoginInBloc>().add(LoginIn(
+                                    email.text,
+                                    password.text,
+                                    selectedShift.toString()));
+                              },
+                              child: appButton(
+                                  height: 50,
+                                  width: size.width * 0.85,
+                                  buttonText: "Confirm Shift"),
+                            ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -164,15 +302,15 @@ class LoginScreenViewState extends State<LoginScreenView> {
                           return null;
                         }),
                     SizedBox(height: 12),
-                    loginLoad
+                    shiftLoad
                         ? const SpinKitCircle(color: appPrimaryColor, size: 30)
                         : InkWell(
                             onTap: () {
                               if (_formKey.currentState!.validate()) {
                                 setState(() {
-                                  loginLoad = true;
+                                  shiftLoad = true;
                                 });
-                                context.read<LoginInBloc>().add(LoginIn(
+                                context.read<LoginInBloc>().add(ShiftSelect(
                                       email.text,
                                       password.text,
                                     ));
@@ -196,6 +334,29 @@ class LoginScreenViewState extends State<LoginScreenView> {
         backgroundColor: whiteColor,
         body: BlocBuilder<LoginInBloc, dynamic>(
           buildWhen: ((previous, current) {
+            if (current is PostShiftModel) {
+              postShiftModel = current;
+              if (postShiftModel.success == true) {
+                if (postShiftModel.data!.role == "OPERATOR") {
+                  setState(() {
+                    shiftLoad = false;
+                    showShiftPopup(context, size, postShiftModel.data!);
+                  });
+                } else {
+                  showToast("Please Login Admin in Web", context, color: false);
+                }
+              } else {
+                final errorMsg =
+                    postShiftModel.errorResponse?.errors?.first.message ??
+                        postShiftModel.message ??
+                        "No shift available...";
+                showToast(errorMsg, context, color: false);
+                setState(() {
+                  shiftLoad = false;
+                });
+              }
+              return true;
+            }
             if (current is PostLoginModel) {
               postLoginModel = current;
               if (postLoginModel.success == true) {

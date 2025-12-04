@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Bloc/Response/errorResponse.dart';
 import 'package:simple/ModelClass/Authentication/Post_login_model.dart';
+import 'package:simple/ModelClass/Authentication/postShiftModel.dart';
 import 'package:simple/ModelClass/Cart/Post_Add_to_billing_model.dart';
 import 'package:simple/ModelClass/Expense/getCategoryByLocationModel.dart';
 import 'package:simple/ModelClass/Expense/getDailyExpenseModel.dart';
@@ -44,13 +45,50 @@ class ApiProvider {
     _dio = Dio(options);
   }
 
-  /// LoginWithOTP API Integration
-  Future<PostLoginModel> loginAPI(
+  /// Select Shift API Integration
+  Future<PostShiftModel> selectShiftAPI(
     String email,
     String password,
   ) async {
     try {
       final dataMap = {"email": email, "password": password};
+      var data = json.encode(dataMap);
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}auth/users/getshift'.trim(),
+        options: Options(
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: data,
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          PostShiftModel postShiftResponse =
+              PostShiftModel.fromJson(response.data);
+          return postShiftResponse;
+        }
+      }
+      return PostShiftModel()
+        ..errorResponse = ErrorResponse(message: "Unexpected error occurred.");
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return PostShiftModel()..errorResponse = errorResponse;
+    } catch (error) {
+      return PostShiftModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Login API Integration
+  Future<PostLoginModel> loginAPI(
+    String email,
+    String password,
+    String shift,
+  ) async {
+    try {
+      final dataMap = {"email": email, "password": password, "shift": shift};
       var data = json.encode(dataMap);
       var dio = Dio();
       var response = await dio.request(
@@ -69,6 +107,10 @@ class ApiProvider {
               PostLoginModel.fromJson(response.data);
           SharedPreferences sharedPreferences =
               await SharedPreferences.getInstance();
+          sharedPreferences.setString(
+            "shift",
+            postLoginResponse.user!.shift.toString(),
+          );
           sharedPreferences.setString(
             "token",
             postLoginResponse.token.toString(),
