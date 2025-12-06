@@ -5,6 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Bloc/Response/errorResponse.dart';
 import 'package:simple/ModelClass/AddCategory/deleteCategoryModel.dart';
+import 'package:simple/ModelClass/AddProduct/DeleteProductsModel.dart';
+import 'package:simple/ModelClass/AddProduct/getAddProductListModel.dart';
+import 'package:simple/ModelClass/AddProduct/getCategoryForAddProductModel.dart';
+import 'package:simple/ModelClass/AddProduct/postAddProductModel.dart';
 import 'package:simple/ModelClass/Authentication/Post_login_model.dart';
 import 'package:simple/ModelClass/Authentication/postShiftModel.dart';
 import 'package:simple/ModelClass/Cart/Post_Add_to_billing_model.dart';
@@ -1604,6 +1608,253 @@ class ApiProvider {
     } catch (error) {
       final errorResponse = handleError(error);
       return AddCategoryListModel()..errorResponse = errorResponse;
+    }
+  }
+
+  /// ADD Product
+  /// Get Category for Product -API Integration
+  Future<GetCategoryForAddProductModel> getCategoryForAddProductAPI(
+      String locId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+    debugPrint(
+        "BaseUrl:${Constants.baseUrl}api/categories?locationId=$locId&filter=false");
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/categories?locationId=$locId&filter=false',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetCategoryForAddProductModel getCategoryForAddProductResponse =
+              GetCategoryForAddProductModel.fromJson(response.data);
+          return getCategoryForAddProductResponse;
+        }
+      } else {
+        return GetCategoryForAddProductModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetCategoryForAddProductModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetCategoryForAddProductModel()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return GetCategoryForAddProductModel()..errorResponse = errorResponse;
+    }
+  }
+
+  /// AddProductList API Integration
+  Future<GetAddProductListModel> getAddProductListAPI(
+      String search,
+      String locId,
+      bool? isDefault,
+      int offset,
+      int limit,
+      String catId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+    debugPrint(
+        "BaseUrl:${Constants.baseUrl}api/products?limit=$limit&offset=$offset&search=$search&locationId=$locId&categoryId=$catId&isDefault=$isDefault");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/products?limit=$limit&offset=$offset&search=$search&locationId=$locId&categoryId=$catId&isDefault=$isDefault',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetAddProductListModel getAddCategoryListResponse =
+              GetAddProductListModel.fromJson(response.data);
+          return getAddCategoryListResponse;
+        }
+      } else {
+        return GetAddProductListModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetAddProductListModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetAddProductListModel()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return GetAddProductListModel()..errorResponse = errorResponse;
+    }
+  }
+
+  /// Delete Products - API Integration
+  Future<DeleteProductsModel> deleteProductAPI(String? productId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+    debugPrint("BaseUrl:${Constants.baseUrl}api/products/$productId");
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/products/$productId',
+        options: Options(
+          method: 'DELETE',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          DeleteProductsModel deleteProductResponse =
+              DeleteProductsModel.fromJson(response.data);
+          return deleteProductResponse;
+        }
+      } else {
+        return DeleteProductsModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return DeleteProductsModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return DeleteProductsModel()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return DeleteProductsModel()..errorResponse = errorResponse;
+    }
+  }
+
+  /// Save Product - API Integration
+  Future<PostAddProductModel> postAddProductAPI(
+      String name,
+      String shortCode,
+      String basePrice,
+      String parcelPrice,
+      String acPrice,
+      String hdPrice,
+      String swiggyPrice,
+      bool isDefault,
+      bool hasAddons,
+      String category,
+      String locationId,
+      bool dailyStockClear,
+      bool isStock,
+      String pickedImageName,
+      {File? imageFile,
+      Uint8List? imageBytes}) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+    try {
+      FormData formData;
+      Map<String, dynamic> fields = {
+        'name': name,
+        'shortCode': shortCode,
+        'basePrice': basePrice,
+        'parcelPrice': parcelPrice,
+        'acPrice': acPrice,
+        'hdPrice': hdPrice,
+        'swiggyPrice': swiggyPrice,
+        'isDefault': isDefault,
+        'hasAddons': hasAddons,
+        'category': category,
+        'locationId': locationId,
+        'dailyStockClear': dailyStockClear,
+        'isStock': isStock
+      };
+      if (kIsWeb) {
+        if (imageBytes != null) {
+          final fileName =
+              pickedImageName.isNotEmpty ? pickedImageName : "image.png";
+
+          fields["image"] = MultipartFile.fromBytes(
+            imageBytes,
+            filename: fileName,
+            contentType: getMediaType(fileName),
+          );
+        }
+      } else {
+        if (imageFile != null) {
+          final fileName = pickedImageName.isNotEmpty
+              ? pickedImageName
+              : imageFile.path.split('/').last;
+
+          fields["image"] = await MultipartFile.fromFile(
+            imageFile.path,
+            filename: fileName,
+          );
+        }
+      }
+
+      formData = FormData.fromMap(fields);
+      var dio = Dio();
+
+      var response = await dio.post(
+        '${Constants.baseUrl}api/products',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+      if (response.statusCode == 201 && response.data != null) {
+        try {
+          PostAddProductModel postAddProductResponse =
+              PostAddProductModel.fromJson(response.data);
+          return postAddProductResponse;
+        } catch (e) {
+          return PostAddProductModel()
+            ..errorResponse = ErrorResponse(
+              message: "Failed to parse response: $e",
+            );
+        }
+      } else {
+        return PostAddProductModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return PostAddProductModel()..errorResponse = errorResponse;
+    } catch (error) {
+      return PostAddProductModel()..errorResponse = handleError(error);
     }
   }
 

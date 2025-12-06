@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Alertbox/AlertDialogBox.dart';
+import 'package:simple/Alertbox/snackBarAlert.dart';
 import 'package:simple/Bloc/AddCategory/add_edit_category_bloc.dart';
+import 'package:simple/Bloc/AddProduct/add_edit_product_bloc.dart';
 import 'package:simple/Bloc/Category/category_bloc.dart';
+import 'package:simple/Bloc/CustomTabBar/dash_bloc.dart';
 import 'package:simple/Bloc/Expense/expense_bloc.dart';
 import 'package:simple/Bloc/Report/report_bloc.dart';
 import 'package:simple/Bloc/ShiftClosing/shift_closing_bloc.dart';
 import 'package:simple/Bloc/StockIn/stock_in_bloc.dart';
-import 'package:simple/Bloc/demo/demo_bloc.dart';
 import 'package:simple/Bloc/Products/product_category_bloc.dart';
 import 'package:simple/ModelClass/Order/Get_view_order_model.dart';
+import 'package:simple/ModelClass/ShopDetails/getStockMaintanencesModel.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/UI/AddCategory/category_list.dart';
+import 'package:simple/UI/AddProduct/product_list.dart';
+import 'package:simple/UI/Authentication/login_screen.dart';
 import 'package:simple/UI/CustomAppBar/custom_appbar.dart';
 import 'package:simple/UI/Expenses/expense_page.dart';
 import 'package:simple/UI/Home_screen/home_screen.dart';
@@ -32,7 +38,7 @@ class DashBoardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => DemoBloc(),
+      create: (_) => DashBloc(),
       child: DashBoard(
         selectTab: selectTab,
         existingOrder: existingOrder,
@@ -59,6 +65,9 @@ class DashBoard extends StatefulWidget {
 }
 
 class _DashBoardState extends State<DashBoard> {
+  GetStockMaintanencesModel getStockMaintanencesModel =
+      GetStockMaintanencesModel();
+  bool stockLoad = false;
   final GlobalKey<OrderViewViewState> orderAllTabKey =
       GlobalKey<OrderViewViewState>();
   final GlobalKey<FoodOrderingScreenViewState> foodKey =
@@ -77,6 +86,8 @@ class _DashBoardState extends State<DashBoard> {
       GlobalKey<ShiftViewViewState>();
   final GlobalKey<CategoryListViewState> catKey =
       GlobalKey<CategoryListViewState>();
+  final GlobalKey<ProductListViewState> proKey =
+      GlobalKey<ProductListViewState>();
   int selectedIndex = 0;
   bool orderLoad = false;
   bool hasRefreshedOrder = false;
@@ -86,6 +97,7 @@ class _DashBoardState extends State<DashBoard> {
   bool hasRefreshedExpense = false;
   bool hasRefreshedShift = false;
   bool hasRefreshedCategory = false;
+  bool hasRefreshedAddProduct = false;
 
   @override
   void initState() {
@@ -93,6 +105,10 @@ class _DashBoardState extends State<DashBoard> {
     if (widget.selectTab != null) {
       selectedIndex = widget.selectTab!;
     }
+    context.read<DashBloc>().add(StockDashDetails());
+    setState(() {
+      stockLoad = true;
+    });
   }
 
   void _resetOrderTab() {
@@ -174,6 +190,15 @@ class _DashBoardState extends State<DashBoard> {
     }
   }
 
+  void _refreshAddProduct() {
+    final proKeyState = proKey.currentState;
+    if (proKeyState != null) {
+      proKeyState.refreshAddProduct();
+    } else {
+      debugPrint("reportKeyState is NULL — check if key is assigned properly");
+    }
+  }
+
   Widget buildDrawerItem({
     required IconData icon,
     required String label,
@@ -233,6 +258,7 @@ class _DashBoardState extends State<DashBoard> {
                     hasRefreshedExpense = false;
                     hasRefreshedShift = false;
                     hasRefreshedCategory = false;
+                    hasRefreshedAddProduct = false;
                     WidgetsBinding.instance
                         .addPostFrameCallback((_) => _refreshHome());
                   },
@@ -255,6 +281,7 @@ class _DashBoardState extends State<DashBoard> {
                     hasRefreshedExpense = false;
                     hasRefreshedShift = false;
                     hasRefreshedCategory = false;
+                    hasRefreshedAddProduct = false;
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       _refreshOrders();
                       _resetOrderTab();
@@ -280,37 +307,40 @@ class _DashBoardState extends State<DashBoard> {
                       hasRefreshedExpense = false;
                       hasRefreshedShift = false;
                       hasRefreshedCategory = false;
+                      hasRefreshedAddProduct = false;
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         _refreshReport();
                       });
                     }
                   },
                 ),
-                buildDrawerItem(
-                  icon: Icons.inventory,
-                  label: "Stockin",
-                  index: 3,
-                  isSelected: selectedIndex == 3,
-                  onTap: () {
-                    setState(() {
-                      selectedIndex = 3;
-                    });
-                    Navigator.pop(context);
-
-                    if (!hasRefreshedStock) {
-                      hasRefreshedOrder = false;
-                      hasRefreshedReport = false;
-                      hasRefreshedStock = true;
-                      hasRefreshedProduct = false;
-                      hasRefreshedExpense = false;
-                      hasRefreshedShift = false;
-                      hasRefreshedCategory = false;
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        _refreshStock();
+                if (getStockMaintanencesModel.data?.stockMaintenance == true)
+                  buildDrawerItem(
+                    icon: Icons.inventory,
+                    label: "Stockin",
+                    index: 3,
+                    isSelected: selectedIndex == 3,
+                    onTap: () {
+                      setState(() {
+                        selectedIndex = 3;
                       });
-                    }
-                  },
-                ),
+                      Navigator.pop(context);
+
+                      if (!hasRefreshedStock) {
+                        hasRefreshedOrder = false;
+                        hasRefreshedReport = false;
+                        hasRefreshedStock = true;
+                        hasRefreshedProduct = false;
+                        hasRefreshedExpense = false;
+                        hasRefreshedShift = false;
+                        hasRefreshedCategory = false;
+                        hasRefreshedAddProduct = false;
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _refreshStock();
+                        });
+                      }
+                    },
+                  ),
                 buildDrawerItem(
                   icon: Icons.shopping_bag_outlined,
                   label: "Products",
@@ -330,6 +360,7 @@ class _DashBoardState extends State<DashBoard> {
                       hasRefreshedProduct = true;
                       hasRefreshedShift = false;
                       hasRefreshedCategory = false;
+                      hasRefreshedAddProduct = false;
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         _refreshProduct();
                       });
@@ -355,6 +386,7 @@ class _DashBoardState extends State<DashBoard> {
                       hasRefreshedExpense = true;
                       hasRefreshedShift = false;
                       hasRefreshedCategory = false;
+                      hasRefreshedAddProduct = false;
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         _refreshExpense();
                       });
@@ -380,6 +412,7 @@ class _DashBoardState extends State<DashBoard> {
                       hasRefreshedExpense = false;
                       hasRefreshedShift = true;
                       hasRefreshedCategory = false;
+                      hasRefreshedAddProduct = false;
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         _refreshShift();
                       });
@@ -388,7 +421,7 @@ class _DashBoardState extends State<DashBoard> {
                 ),
                 buildDrawerItem(
                   icon: Icons.folder_shared,
-                  label: "Categories",
+                  label: "Add Categories",
                   index: 7,
                   isSelected: selectedIndex == 7,
                   onTap: () {
@@ -405,8 +438,35 @@ class _DashBoardState extends State<DashBoard> {
                       hasRefreshedExpense = false;
                       hasRefreshedShift = false;
                       hasRefreshedCategory = true;
+                      hasRefreshedAddProduct = false;
                       WidgetsBinding.instance.addPostFrameCallback((_) {
                         _refreshCategory();
+                      });
+                    }
+                  },
+                ),
+                buildDrawerItem(
+                  icon: Icons.shopping_cart_outlined,
+                  label: "Add Products",
+                  index: 8,
+                  isSelected: selectedIndex == 8,
+                  onTap: () {
+                    setState(() {
+                      selectedIndex = 8;
+                    });
+                    Navigator.pop(context);
+
+                    if (!hasRefreshedAddProduct) {
+                      hasRefreshedOrder = false;
+                      hasRefreshedReport = false;
+                      hasRefreshedStock = false;
+                      hasRefreshedProduct = false;
+                      hasRefreshedExpense = false;
+                      hasRefreshedShift = false;
+                      hasRefreshedCategory = false;
+                      hasRefreshedAddProduct = true;
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _refreshAddProduct();
                       });
                     }
                   },
@@ -455,6 +515,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedExpense = false;
               hasRefreshedShift = false;
               hasRefreshedCategory = false;
+              hasRefreshedAddProduct = false;
               WidgetsBinding.instance
                   .addPostFrameCallback((_) => _refreshHome());
             }
@@ -466,6 +527,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedExpense = false;
               hasRefreshedShift = false;
               hasRefreshedCategory = false;
+              hasRefreshedAddProduct = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshOrders();
                 _resetOrderTab();
@@ -479,6 +541,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedExpense = false;
               hasRefreshedShift = false;
               hasRefreshedCategory = false;
+              hasRefreshedAddProduct = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshReport();
               });
@@ -491,6 +554,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedExpense = false;
               hasRefreshedShift = false;
               hasRefreshedCategory = false;
+              hasRefreshedAddProduct = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshStock();
               });
@@ -503,6 +567,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedProduct = true;
               hasRefreshedShift = false;
               hasRefreshedCategory = false;
+              hasRefreshedAddProduct = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshProduct();
               });
@@ -515,6 +580,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedExpense = true;
               hasRefreshedShift = false;
               hasRefreshedCategory = false;
+              hasRefreshedAddProduct = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshExpense();
               });
@@ -527,6 +593,7 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedExpense = false;
               hasRefreshedShift = true;
               hasRefreshedCategory = false;
+              hasRefreshedAddProduct = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _refreshShift();
               });
@@ -539,8 +606,22 @@ class _DashBoardState extends State<DashBoard> {
               hasRefreshedExpense = false;
               hasRefreshedShift = false;
               hasRefreshedCategory = true;
+              hasRefreshedAddProduct = false;
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                _refreshShift();
+                _refreshCategory();
+              });
+            }
+            if (index == 8 && !hasRefreshedAddProduct) {
+              hasRefreshedOrder = false;
+              hasRefreshedReport = false;
+              hasRefreshedStock = false;
+              hasRefreshedProduct = false;
+              hasRefreshedExpense = false;
+              hasRefreshedShift = false;
+              hasRefreshedCategory = false;
+              hasRefreshedAddProduct = true;
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _refreshAddProduct();
               });
             }
           },
@@ -659,6 +740,20 @@ class _DashBoardState extends State<DashBoard> {
                       hasRefreshedCategory: hasRefreshedCategory,
                     ),
                   ),
+            hasRefreshedAddProduct == true
+                ? BlocProvider(
+                    create: (_) => ProductBloc(),
+                    child: ProductListView(
+                      key: proKey,
+                      hasRefreshedAddProduct: hasRefreshedAddProduct,
+                    ))
+                : BlocProvider(
+                    create: (_) => ProductBloc(),
+                    child: ProductList(
+                      key: proKey,
+                      hasRefreshedAddProduct: hasRefreshedAddProduct,
+                    ),
+                  ),
           ],
         ),
       ),
@@ -667,13 +762,43 @@ class _DashBoardState extends State<DashBoard> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<DemoBloc, dynamic>(
+    return BlocBuilder<DashBloc, dynamic>(
       buildWhen: (previous, current) {
+        if (current is GetStockMaintanencesModel) {
+          getStockMaintanencesModel = current;
+          if (getStockMaintanencesModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (getStockMaintanencesModel.success == true) {
+            setState(() {
+              stockLoad = false;
+            });
+          } else {
+            setState(() {
+              stockLoad = false;
+            });
+            showToast("No Stock found", context, color: false);
+          }
+          return true;
+        }
         return false;
       },
       builder: (context, state) {
         return mainContainer();
       },
+    );
+  }
+
+  void _handle401Error() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    await sharedPreferences.remove("token");
+    await sharedPreferences.clear();
+    showToast("Session expired. Please login again.", context, color: false);
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => LoginScreen()),
+      (Route<dynamic> route) => false,
     );
   }
 }

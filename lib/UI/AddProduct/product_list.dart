@@ -6,58 +6,71 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Alertbox/snackBarAlert.dart';
-import 'package:simple/Bloc/AddCategory/add_edit_category_bloc.dart';
-import 'package:simple/ModelClass/AddCategory/PostCategoryModel.dart';
-import 'package:simple/ModelClass/AddCategory/addCategoryListModel.dart';
-import 'package:simple/ModelClass/AddCategory/deleteCategoryModel.dart';
+import 'package:simple/Bloc/AddProduct/add_edit_product_bloc.dart';
 import 'package:simple/ModelClass/AddCategory/getSingleCategoryModel.dart';
 import 'package:simple/ModelClass/AddCategory/putCategoryModel.dart';
+import 'package:simple/ModelClass/AddProduct/DeleteProductsModel.dart';
+import 'package:simple/ModelClass/AddProduct/getAddProductListModel.dart';
+import 'package:simple/ModelClass/AddProduct/getCategoryForAddProductModel.dart';
+import 'package:simple/ModelClass/AddProduct/postAddProductModel.dart';
+import 'package:simple/ModelClass/ShopDetails/getStockMaintanencesModel.dart';
 import 'package:simple/ModelClass/StockIn/getLocationModel.dart';
 import 'package:simple/Reusable/color.dart';
 import 'package:simple/Reusable/image.dart';
 import 'package:simple/Reusable/text_styles.dart';
 import 'package:simple/UI/Authentication/login_screen.dart';
 
-class CategoryList extends StatelessWidget {
-  final GlobalKey<CategoryListViewState>? catKey;
-  bool? hasRefreshedCategory;
-  CategoryList({
+class ProductList extends StatelessWidget {
+  final GlobalKey<ProductListViewState>? proKey;
+  bool? hasRefreshedAddProduct;
+  ProductList({
     super.key,
-    this.catKey,
-    this.hasRefreshedCategory,
+    this.proKey,
+    this.hasRefreshedAddProduct,
   });
 
   @override
   Widget build(BuildContext context) {
-    return CategoryListView(
-        catKey: catKey, hasRefreshedCategory: hasRefreshedCategory);
+    return ProductListView(
+        proKey: proKey, hasRefreshedAddProduct: hasRefreshedAddProduct);
   }
 }
 
-class CategoryListView extends StatefulWidget {
-  final GlobalKey<CategoryListViewState>? catKey;
-  bool? hasRefreshedCategory;
-  CategoryListView({
+class ProductListView extends StatefulWidget {
+  final GlobalKey<ProductListViewState>? proKey;
+  bool? hasRefreshedAddProduct;
+  ProductListView({
     super.key,
-    this.catKey,
-    this.hasRefreshedCategory,
+    this.proKey,
+    this.hasRefreshedAddProduct,
   });
 
   @override
-  CategoryListViewState createState() => CategoryListViewState();
+  ProductListViewState createState() => ProductListViewState();
 }
 
-class CategoryListViewState extends State<CategoryListView> {
+class ProductListViewState extends State<ProductListView> {
   GetLocationModel getLocationModel = GetLocationModel();
-  PostCategoryModel postCategoryModel = PostCategoryModel();
-  AddCategoryListModel addCategoryListModel = AddCategoryListModel();
+  GetCategoryForAddProductModel getCategoryForAddProductModel =
+      GetCategoryForAddProductModel();
+  PostAddProductModel postAddProductModel = PostAddProductModel();
+  GetAddProductListModel getAddProductListModel = GetAddProductListModel();
   GetSingleCategoryModel getSingleCategoryModel = GetSingleCategoryModel();
   PutCategoryModel putCategoryModel = PutCategoryModel();
-  DeleteCategoryModel deleteCategoryModel = DeleteCategoryModel();
-
-  final TextEditingController categoryController = TextEditingController();
+  DeleteProductsModel deleteProductModel = DeleteProductsModel();
+  GetStockMaintanencesModel getStockMaintanencesModel =
+      GetStockMaintanencesModel();
+  final TextEditingController productController = TextEditingController();
+  final TextEditingController codeController = TextEditingController();
+  final TextEditingController basePriceController = TextEditingController();
+  final TextEditingController parcelPriceController = TextEditingController();
+  final TextEditingController hdPriceController = TextEditingController();
+  final TextEditingController acPriceController = TextEditingController();
+  final TextEditingController swiggyPriceController = TextEditingController();
   TextEditingController searchController = TextEditingController();
   bool isAvailable = true;
+  bool isStockTrack = false;
+  bool isDailyStock = false;
   String? locationId;
   File? categoryImage;
   Uint8List? categoryImageBytes;
@@ -71,25 +84,31 @@ class CategoryListViewState extends State<CategoryListView> {
   final List<String> statusList = ["All", "Available", "Unavailable"];
 
   String? selectedStatus = "All";
+  String? selectedCategory;
+  String? selectedCategorySave;
 
   bool categoryLoad = false;
   bool saveLoad = false;
   bool editLoad = false;
   bool deleteLoad = false;
-
+  bool stockDetailsLoad = false;
   bool stockLoad = false;
+  bool proCatLoad = false;
   bool catLoad = false;
   bool expenseShowLoad = false;
   bool isEdit = false;
   String? errorMessage;
   String? catId;
+  String? catSaveId;
   String? apiImageUrl;
 
-  void refreshCategory() {
+  void refreshAddProduct() {
     if (!mounted || !context.mounted) return;
-    context.read<CategoryBloc>().add(StockInLocation());
+    context.read<ProductBloc>().add(StockInLocation());
+    context.read<ProductBloc>().add(StockDetails());
     setState(() {
       stockLoad = true;
+      stockDetailsLoad = true;
     });
   }
 
@@ -98,26 +117,39 @@ class CategoryListViewState extends State<CategoryListView> {
       categoryImage = null;
       categoryImageBytes = null;
       apiImageUrl = null;
-      categoryController.clear();
+      selectedCategory = null;
+      selectedCategorySave = null;
+      catId = null;
+      catSaveId = null;
+      basePriceController.clear();
+      parcelPriceController.clear();
+      acPriceController.clear();
+      hdPriceController.clear();
+      swiggyPriceController.clear();
+      productController.clear();
+      codeController.clear();
+      isStockTrack = false;
+      isDailyStock = false;
     });
   }
 
   @override
   void initState() {
     super.initState();
-    if (widget.hasRefreshedCategory == true) {
+    if (widget.hasRefreshedAddProduct == true) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         setState(() {
           stockLoad = true;
           catLoad = true;
         });
-        widget.catKey?.currentState?.refreshCategory();
+        widget.proKey?.currentState?.refreshAddProduct();
       });
     } else {
-      context.read<CategoryBloc>().add(StockInLocation());
-
+      context.read<ProductBloc>().add(StockInLocation());
+      context.read<ProductBloc>().add(StockDetails());
       setState(() {
         stockLoad = true;
+        stockDetailsLoad = true;
       });
     }
   }
@@ -127,19 +159,24 @@ class CategoryListViewState extends State<CategoryListView> {
       searchController.clear();
       selectedStatus = "All";
       stockLoad = true;
+      selectedCategory = null;
+      selectedCategorySave = null;
+      catId = null;
+      catSaveId = null;
       offset = 0;
       currentPage = 0;
       rowsPerPage = 5;
       totalItems = 0;
       totalPages = 1;
     });
-    context.read<CategoryBloc>().add(StockInLocation());
+    context.read<ProductBloc>().add(StockInLocation());
+    context.read<ProductBloc>().add(StockDetails());
     bool? statusValue = selectedStatus == "All"
         ? null
         : (selectedStatus == "Available" ? true : false);
-    context.read<CategoryBloc>().add(AddCategory(searchController.text,
-        locationId ?? "", statusValue, offset, rowsPerPage));
-    widget.catKey?.currentState?.refreshCategory();
+    context.read<ProductBloc>().add(AddProduct(searchController.text,
+        locationId ?? "", statusValue, offset, rowsPerPage, catId ?? ""));
+    widget.proKey?.currentState?.refreshAddProduct();
   }
 
   void _refreshEditData() {
@@ -148,11 +185,10 @@ class CategoryListViewState extends State<CategoryListView> {
       categoryImage = null;
       categoryImageBytes = null;
       apiImageUrl = null;
-      catId = null;
-      categoryController.clear();
     });
-    context.read<CategoryBloc>().add(StockInLocation());
-    widget.catKey?.currentState?.refreshCategory();
+    context.read<ProductBloc>().add(StockInLocation());
+    context.read<ProductBloc>().add(StockDetails());
+    widget.proKey?.currentState?.refreshAddProduct();
   }
 
   @override
@@ -189,9 +225,9 @@ class CategoryListViewState extends State<CategoryListView> {
         ? null
         : (selectedStatus == "Available" ? true : false);
 
-    context.read<CategoryBloc>().add(
-          AddCategory(searchController.text, locationId ?? "", statusValue,
-              offset, rowsPerPage),
+    context.read<ProductBloc>().add(
+          AddProduct(searchController.text, locationId ?? "", statusValue,
+              offset, rowsPerPage, catId ?? ""),
         );
   }
 
@@ -266,7 +302,7 @@ class CategoryListViewState extends State<CategoryListView> {
               Row(
                 children: [
                   Text(
-                    isEdit ? "Edit Category" : "Add New Category",
+                    isEdit ? "Edit Product" : "Add New Product",
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                   if (isEdit)
@@ -307,7 +343,61 @@ class CategoryListViewState extends State<CategoryListView> {
                             ),
                           ),
                         )
-                      : SizedBox.shrink()
+                      : SizedBox.shrink(),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: (getCategoryForAddProductModel.data?.any((item) =>
+                                  item.name == selectedCategorySave) ??
+                              false)
+                          ? selectedCategorySave
+                          : null,
+                      icon: const Icon(
+                        Icons.arrow_drop_down,
+                        color: appPrimaryColor,
+                      ),
+                      isExpanded: false,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: appPrimaryColor,
+                          ),
+                        ),
+                      ),
+                      items: getCategoryForAddProductModel.data?.map((item) {
+                        return DropdownMenuItem<String>(
+                          value: item.name,
+                          child: Text(
+                            "${item.name}",
+                            style: MyTextStyle.f14(
+                              blackColor,
+                              weight: FontWeight.normal,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            selectedCategorySave = newValue;
+                            final selectedItem = getCategoryForAddProductModel
+                                .data
+                                ?.firstWhere((item) => item.name == newValue);
+                            catSaveId = selectedItem?.id.toString();
+                            debugPrint("categoryId:$catId");
+                          });
+                        }
+                      },
+                      hint: Text(
+                        '-- Select Category --',
+                        style: MyTextStyle.f14(
+                          blackColor,
+                          weight: FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
 
@@ -318,9 +408,20 @@ class CategoryListViewState extends State<CategoryListView> {
                 children: [
                   Expanded(
                     child: TextField(
-                      controller: categoryController,
+                      controller: productController,
                       decoration: InputDecoration(
-                        labelText: "Category Name *",
+                        labelText: "Product Name *",
+                        labelStyle: MyTextStyle.f14(greyColor),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: codeController,
+                      decoration: InputDecoration(
+                        labelText: "Short Code",
                         labelStyle: MyTextStyle.f14(greyColor),
                         border: OutlineInputBorder(),
                       ),
@@ -329,6 +430,65 @@ class CategoryListViewState extends State<CategoryListView> {
                 ],
               ),
               // ---------------- Row 3 ----------------
+              const SizedBox(height: 15),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: basePriceController,
+                      decoration: InputDecoration(
+                        labelText: "Base Price *",
+                        labelStyle: MyTextStyle.f14(greyColor),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: parcelPriceController,
+                      decoration: InputDecoration(
+                        labelText: "Parcel Price *",
+                        labelStyle: MyTextStyle.f14(greyColor),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: acPriceController,
+                      decoration: InputDecoration(
+                        labelText: "AC Price *",
+                        labelStyle: MyTextStyle.f14(greyColor),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: hdPriceController,
+                      decoration: InputDecoration(
+                        labelText: "HD Price *",
+                        labelStyle: MyTextStyle.f14(greyColor),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: swiggyPriceController,
+                      decoration: InputDecoration(
+                        labelText: "SWIGGY Price *",
+                        labelStyle: MyTextStyle.f14(greyColor),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 15),
               if (categoryImage == null &&
                   categoryImageBytes == null &&
@@ -471,7 +631,35 @@ class CategoryListViewState extends State<CategoryListView> {
                     },
                     activeColor: appPrimaryColor,
                   ),
-                  const Text("Available", style: TextStyle(fontSize: 16)),
+                  const Text("Available in POS",
+                      style: TextStyle(fontSize: 16)),
+                  if (getStockMaintanencesModel.data?.stockMaintenance ==
+                      true) ...[
+                    Checkbox(
+                      value: isStockTrack,
+                      onChanged: (value) {
+                        setState(() {
+                          isStockTrack = value!;
+                        });
+                      },
+                      activeColor: appPrimaryColor,
+                    ),
+                    const Text("Track Stock", style: TextStyle(fontSize: 16)),
+                  ],
+                  if (getStockMaintanencesModel.data?.stockMaintenance ==
+                      true) ...[
+                    Checkbox(
+                      value: isDailyStock,
+                      onChanged: (value) {
+                        setState(() {
+                          isDailyStock = value!;
+                        });
+                      },
+                      activeColor: appPrimaryColor,
+                    ),
+                    const Text("Daily Stock Clear",
+                        style: TextStyle(fontSize: 16)),
+                  ]
                 ],
               ),
 
@@ -482,40 +670,40 @@ class CategoryListViewState extends State<CategoryListView> {
                           ? SpinKitCircle(color: appPrimaryColor, size: 30)
                           : ElevatedButton(
                               onPressed: () {
-                                if (getLocationModel.data!.locationName ==
-                                    null) {
-                                  showToast("Location not found", context,
-                                      color: false);
-                                } else if (categoryController.text.isEmpty) {
-                                  showToast("Enter category name", context,
-                                      color: false);
-                                } else {
-                                  setState(() {
-                                    editLoad = true;
-                                    String finalImageName =
-                                        pickedImageName ?? "";
-                                    Uint8List? finalBytes = categoryImageBytes;
-                                    File? finalFile = categoryImage;
-                                    debugPrint("finalByte:$finalBytes");
-                                    debugPrint("finalFile:$finalFile");
-                                    debugPrint("apiImage:$apiImageUrl");
-                                    if (finalBytes == null &&
-                                        finalFile == null) {
-                                      finalImageName = apiImageUrl ?? "";
-                                    }
-                                    context
-                                        .read<CategoryBloc>()
-                                        .add(UpdateCategory(
-                                          catId.toString(),
-                                          categoryController.text,
-                                          isAvailable,
-                                          locationId.toString(),
-                                          finalImageName,
-                                          imageBytes: finalBytes,
-                                          imageFile: finalFile,
-                                        ));
-                                  });
-                                }
+                                // if (getLocationModel.data!.locationName ==
+                                //     null) {
+                                //   showToast("Location not found", context,
+                                //       color: false);
+                                // } else if (categoryController.text.isEmpty) {
+                                //   showToast("Enter category name", context,
+                                //       color: false);
+                                // } else {
+                                //   setState(() {
+                                //     editLoad = true;
+                                //     String finalImageName =
+                                //         pickedImageName ?? "";
+                                //     Uint8List? finalBytes = categoryImageBytes;
+                                //     File? finalFile = categoryImage;
+                                //     debugPrint("finalByte:$finalBytes");
+                                //     debugPrint("finalFile:$finalFile");
+                                //     debugPrint("apiImage:$apiImageUrl");
+                                //     if (finalBytes == null &&
+                                //         finalFile == null) {
+                                //       finalImageName = apiImageUrl ?? "";
+                                //     }
+                                //     context
+                                //         .read<ProductBloc>()
+                                //         .add(UpdateCategory(
+                                //           catId.toString(),
+                                //           categoryController.text,
+                                //           isAvailable,
+                                //           locationId.toString(),
+                                //           finalImageName,
+                                //           imageBytes: finalBytes,
+                                //           imageFile: finalFile,
+                                //         ));
+                                //   });
+                                //  }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: appPrimaryColor,
@@ -525,7 +713,7 @@ class CategoryListViewState extends State<CategoryListView> {
                                 ),
                               ),
                               child: const Text(
-                                "Update Category",
+                                "Update Product",
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white),
@@ -541,20 +729,47 @@ class CategoryListViewState extends State<CategoryListView> {
                                     null) {
                                   showToast("Location not found", context,
                                       color: false);
-                                } else if (categoryController.text.isEmpty) {
-                                  showToast("Enter category name", context,
+                                } else if (selectedCategorySave == null) {
+                                  showToast("Select Category", context,
+                                      color: false);
+                                } else if (productController.text.isEmpty) {
+                                  showToast("Enter product name", context,
+                                      color: false);
+                                } else if (basePriceController.text.isEmpty) {
+                                  showToast("Enter Base Price", context,
+                                      color: false);
+                                } else if (parcelPriceController.text.isEmpty) {
+                                  showToast("Enter Parcel Price", context,
+                                      color: false);
+                                } else if (acPriceController.text.isEmpty) {
+                                  showToast("Enter AC Price", context,
+                                      color: false);
+                                } else if (hdPriceController.text.isEmpty) {
+                                  showToast("Enter HD Price", context,
+                                      color: false);
+                                } else if (swiggyPriceController.text.isEmpty) {
+                                  showToast("Enter Swiggy Price", context,
                                       color: false);
                                 } else {
                                   setState(() {
                                     saveLoad = true;
-                                    context.read<CategoryBloc>().add(
-                                        SaveCategory(
-                                            categoryController.text,
-                                            isAvailable,
-                                            locationId.toString(),
-                                            pickedImageName.toString(),
-                                            imageBytes: categoryImageBytes,
-                                            imageFile: categoryImage));
+                                    context.read<ProductBloc>().add(SaveProduct(
+                                        productController.text,
+                                        codeController.text,
+                                        basePriceController.text,
+                                        parcelPriceController.text,
+                                        acPriceController.text,
+                                        hdPriceController.text,
+                                        swiggyPriceController.text,
+                                        isAvailable,
+                                        false,
+                                        catSaveId.toString(),
+                                        locationId.toString(),
+                                        isDailyStock,
+                                        isStockTrack,
+                                        pickedImageName.toString(),
+                                        imageBytes: categoryImageBytes,
+                                        imageFile: categoryImage));
                                   });
                                 }
                               },
@@ -566,7 +781,7 @@ class CategoryListViewState extends State<CategoryListView> {
                                 ),
                               ),
                               child: const Text(
-                                "SAVE",
+                                "Add Product",
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white),
@@ -576,21 +791,42 @@ class CategoryListViewState extends State<CategoryListView> {
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "Category List",
+                  "Products List",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
 
               const SizedBox(height: 10),
 
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Filters",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Filters",
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      _refreshData();
+                    },
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: appPrimaryColor,
+                        minimumSize: const Size(0, 40), // Height only
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        )),
+                    child: const Text(
+                      "CLEAR FILTERS",
+                      style: TextStyle(color: whiteColor),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 15),
               Row(
                 children: [
                   Expanded(
@@ -612,12 +848,13 @@ class CategoryListViewState extends State<CategoryListView> {
                           bool? statusValue = selectedStatus == "All"
                               ? null
                               : (selectedStatus == "Available" ? true : false);
-                          context.read<CategoryBloc>().add(AddCategory(
+                          context.read<ProductBloc>().add(AddProduct(
                               searchController.text,
                               locationId ?? "",
                               statusValue,
                               offset,
-                              rowsPerPage));
+                              rowsPerPage,
+                              catId ?? ""));
                         });
                       },
                     ),
@@ -639,12 +876,13 @@ class CategoryListViewState extends State<CategoryListView> {
                           bool? statusValue = selectedStatus == "All"
                               ? null
                               : (selectedStatus == "Available" ? true : false);
-                          context.read<CategoryBloc>().add(AddCategory(
+                          context.read<ProductBloc>().add(AddProduct(
                               searchController.text,
                               locationId ?? "",
                               statusValue,
                               offset,
-                              rowsPerPage));
+                              rowsPerPage,
+                              catId ?? ""));
                         });
                       },
                       decoration: const InputDecoration(
@@ -655,19 +893,69 @@ class CategoryListViewState extends State<CategoryListView> {
                     ),
                   ),
                   const SizedBox(width: 15),
-                  ElevatedButton(
-                    onPressed: () {
-                      _refreshData();
-                    },
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: appPrimaryColor,
-                        minimumSize: const Size(0, 50), // Height only
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        )),
-                    child: const Text(
-                      "CLEAR FILTERS",
-                      style: TextStyle(color: whiteColor),
+                  Expanded(
+                    child: DropdownButtonFormField<String>(
+                      value: (getCategoryForAddProductModel.data?.any(
+                                  (item) => item.name == selectedCategory) ??
+                              false)
+                          ? selectedCategory
+                          : null,
+                      icon: const Icon(
+                        Icons.arrow_drop_down,
+                        color: appPrimaryColor,
+                      ),
+                      isExpanded: false,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(
+                            color: appPrimaryColor,
+                          ),
+                        ),
+                      ),
+                      items: getCategoryForAddProductModel.data?.map((item) {
+                        return DropdownMenuItem<String>(
+                          value: item.name,
+                          child: Text(
+                            "${item.name}",
+                            style: MyTextStyle.f14(
+                              blackColor,
+                              weight: FontWeight.normal,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue) {
+                        if (newValue != null) {
+                          setState(() {
+                            selectedCategory = newValue;
+                            final selectedItem = getCategoryForAddProductModel
+                                .data
+                                ?.firstWhere((item) => item.name == newValue);
+                            catId = selectedItem?.id.toString();
+                            debugPrint("categoryId:$catId");
+                            bool? statusValue = selectedStatus == "All"
+                                ? null
+                                : (selectedStatus == "Available"
+                                    ? true
+                                    : false);
+                            context.read<ProductBloc>().add(AddProduct(
+                                searchController.text,
+                                locationId ?? "",
+                                statusValue,
+                                offset,
+                                rowsPerPage,
+                                catId ?? ""));
+                          });
+                        }
+                      },
+                      hint: Text(
+                        '-- Select Category --',
+                        style: MyTextStyle.f14(
+                          blackColor,
+                          weight: FontWeight.normal,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -682,15 +970,15 @@ class CategoryListViewState extends State<CategoryListView> {
                       alignment: Alignment.center,
                       child: const SpinKitChasingDots(
                           color: appPrimaryColor, size: 30))
-                  : addCategoryListModel.data == null ||
-                          addCategoryListModel.data == [] ||
-                          addCategoryListModel.data!.isEmpty
+                  : getAddProductListModel.data == null ||
+                          getAddProductListModel.data == [] ||
+                          getAddProductListModel.data!.isEmpty
                       ? Container(
                           padding: EdgeInsets.only(
                               top: MediaQuery.of(context).size.height * 0.1),
                           alignment: Alignment.center,
                           child: Text(
-                            "No Category Found !!!",
+                            "No Products Found !!!",
                             style: MyTextStyle.f16(
                               greyColor,
                               weight: FontWeight.w500,
@@ -698,14 +986,17 @@ class CategoryListViewState extends State<CategoryListView> {
                           ))
                       : LayoutBuilder(
                           builder: (context, constraints) {
-                            // Calculate column widths based on available screen width
                             final availableWidth = constraints.maxWidth;
-                            final availableHeight = constraints.maxHeight;
                             double colImage = availableWidth * 0.08;
-                            double colName = availableWidth * 0.10;
-                            double colProducts = availableWidth * 0.09;
-                            double colStatus = availableWidth * 0.09;
-                            double colLocation = availableWidth * 0.12;
+                            double colName = availableWidth * 0.08;
+                            double colCode = availableWidth * 0.08;
+                            double colCategory = availableWidth * 0.09;
+                            double colBase = availableWidth * 0.08;
+                            double colStock = availableWidth * 0.07;
+                            double colDailyHeader = availableWidth * 0.08;
+                            double colDaily = availableWidth * 0.07;
+                            double colStatusHeader = availableWidth * 0.07;
+                            double colStatus = availableWidth * 0.10;
                             double colActions = availableWidth * 0.10;
                             return SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
@@ -754,20 +1045,38 @@ class CategoryListViewState extends State<CategoryListView> {
                                           ),
                                           DataColumn(
                                             label: SizedBox(
-                                              width: colProducts,
-                                              child: const Text("Products"),
+                                              width: colCode,
+                                              child: const Text("Code"),
                                             ),
                                           ),
                                           DataColumn(
                                             label: SizedBox(
-                                              width: colStatus,
+                                              width: colCategory,
+                                              child: const Text("Category"),
+                                            ),
+                                          ),
+                                          DataColumn(
+                                            label: SizedBox(
+                                              width: colBase,
+                                              child: const Text("Base Price"),
+                                            ),
+                                          ),
+                                          DataColumn(
+                                            label: SizedBox(
+                                              width: colStock,
+                                              child: const Text("Stock"),
+                                            ),
+                                          ),
+                                          DataColumn(
+                                            label: SizedBox(
+                                              width: colDailyHeader,
+                                              child: const Text("Daily Clear"),
+                                            ),
+                                          ),
+                                          DataColumn(
+                                            label: SizedBox(
+                                              width: colStatusHeader,
                                               child: const Text("Status"),
-                                            ),
-                                          ),
-                                          DataColumn(
-                                            label: SizedBox(
-                                              width: colLocation,
-                                              child: const Text("Location"),
                                             ),
                                           ),
                                           DataColumn(
@@ -777,7 +1086,7 @@ class CategoryListViewState extends State<CategoryListView> {
                                             ),
                                           ),
                                         ],
-                                        rows: addCategoryListModel.data!
+                                        rows: getAddProductListModel.data!
                                             .map((item) {
                                           return DataRow(
                                             cells: [
@@ -809,26 +1118,88 @@ class CategoryListViewState extends State<CategoryListView> {
                                                     item.name ?? "",
                                                     overflow:
                                                         TextOverflow.ellipsis,
+                                                    maxLines: 2,
                                                   ),
                                                 ),
                                               ),
                                               DataCell(
                                                 SizedBox(
-                                                  width: colProducts,
+                                                  width: colCode,
+                                                  child: Text(
+                                                    item.shortCode ?? "",
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ),
+                                              DataCell(
+                                                SizedBox(
+                                                  width: colCategory,
+                                                  child: Text(
+                                                    item.category?.name ?? "",
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    maxLines: 2,
+                                                  ),
+                                                ),
+                                              ),
+                                              DataCell(
+                                                SizedBox(
+                                                  width: colBase,
+                                                  child: Text(
+                                                    item.basePrice
+                                                            ?.toStringAsFixed(
+                                                                2) ??
+                                                        "",
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ),
+                                              DataCell(
+                                                SizedBox(
+                                                  width: colStock,
                                                   child: Container(
                                                     height: 20,
                                                     alignment: Alignment.center,
                                                     decoration: BoxDecoration(
                                                         color:
-                                                            item.productCount ==
-                                                                    0
-                                                                ? greyColor200
-                                                                : greenColor,
+                                                            item.isStock == true
+                                                                ? greenColor
+                                                                : greyColor,
                                                         borderRadius:
                                                             BorderRadius
                                                                 .circular(10)),
                                                     child: Text(
-                                                      "${item.productCount == 0 ? "No" : item.productCount} Products",
+                                                      item.isStock == true
+                                                          ? "Yes"
+                                                          : "No",
+                                                      overflow:
+                                                          TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                              DataCell(
+                                                SizedBox(
+                                                  width: colDaily,
+                                                  child: Container(
+                                                    height: 20,
+                                                    alignment: Alignment.center,
+                                                    decoration: BoxDecoration(
+                                                        color:
+                                                            item.dailyStockClear ==
+                                                                    true
+                                                                ? greenColor
+                                                                : greyColor,
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(10)),
+                                                    child: Text(
+                                                      item.dailyStockClear ==
+                                                              true
+                                                          ? "Yes"
+                                                          : "No",
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                     ),
@@ -842,29 +1213,20 @@ class CategoryListViewState extends State<CategoryListView> {
                                                     height: 20,
                                                     alignment: Alignment.center,
                                                     decoration: BoxDecoration(
-                                                        color:
-                                                            item.statusText ==
-                                                                    "Available"
-                                                                ? greenColor
-                                                                : redColor,
+                                                        color: item.isDefault ==
+                                                                true
+                                                            ? greenColor
+                                                            : redColor,
                                                         borderRadius:
                                                             BorderRadius
                                                                 .circular(10)),
                                                     child: Text(
-                                                      item.statusText ?? "",
+                                                      item.isDefault == true
+                                                          ? "Available"
+                                                          : "Unavailable",
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                     ),
-                                                  ),
-                                                ),
-                                              ),
-                                              DataCell(
-                                                SizedBox(
-                                                  width: colLocation,
-                                                  child: Text(
-                                                    item.locationId?.name ?? "",
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
                                                   ),
                                                 ),
                                               ),
@@ -892,7 +1254,7 @@ class CategoryListViewState extends State<CategoryListView> {
                                                           });
                                                           context
                                                               .read<
-                                                                  CategoryBloc>()
+                                                                  ProductBloc>()
                                                               .add(CategoryById(
                                                                   catId
                                                                       .toString()));
@@ -912,8 +1274,8 @@ class CategoryListViewState extends State<CategoryListView> {
                                                         onPressed: () {
                                                           context
                                                               .read<
-                                                                  CategoryBloc>()
-                                                              .add(DeleteCategory(item
+                                                                  ProductBloc>()
+                                                              .add(DeleteProduct(item
                                                                   .id
                                                                   .toString()));
                                                         },
@@ -944,7 +1306,7 @@ class CategoryListViewState extends State<CategoryListView> {
       );
     }
 
-    return BlocBuilder<CategoryBloc, dynamic>(
+    return BlocBuilder<ProductBloc, dynamic>(
       buildWhen: ((previous, current) {
         if (current is GetLocationModel) {
           getLocationModel = current;
@@ -956,11 +1318,19 @@ class CategoryListViewState extends State<CategoryListView> {
             locationId = getLocationModel.data?.locationId;
             debugPrint("locationId:$locationId");
             debugPrint("locationId:$locationId");
+            context
+                .read<ProductBloc>()
+                .add(AddCategoryForProduct(locationId ?? ""));
             bool? statusValue = selectedStatus == "All"
                 ? null
                 : (selectedStatus == "Available" ? true : false);
-            context.read<CategoryBloc>().add(AddCategory(searchController.text,
-                locationId ?? "", statusValue, offset, rowsPerPage));
+            context.read<ProductBloc>().add(AddProduct(
+                searchController.text,
+                locationId ?? "",
+                statusValue,
+                offset,
+                rowsPerPage,
+                catId ?? ""));
             setState(() {
               stockLoad = false;
               catLoad = true;
@@ -974,19 +1344,24 @@ class CategoryListViewState extends State<CategoryListView> {
           }
           return true;
         }
-        if (current is PostCategoryModel) {
-          postCategoryModel = current;
-          if (postCategoryModel.errorResponse?.isUnauthorized == true) {
+        if (current is PostAddProductModel) {
+          postAddProductModel = current;
+          if (postAddProductModel.errorResponse?.isUnauthorized == true) {
             _handle401Error();
             return true;
           }
-          if (postCategoryModel.success == true) {
-            showToast("Category Added Successfully", context, color: true);
+          if (postAddProductModel.success == true) {
+            showToast("Product Added Successfully", context, color: true);
             bool? statusValue = selectedStatus == "All"
                 ? null
                 : (selectedStatus == "Available" ? true : false);
-            context.read<CategoryBloc>().add(AddCategory(searchController.text,
-                locationId ?? "", statusValue, offset, rowsPerPage));
+            context.read<ProductBloc>().add(AddProduct(
+                searchController.text,
+                locationId ?? "",
+                statusValue,
+                offset,
+                rowsPerPage,
+                catId ?? ""));
             Future.delayed(Duration(milliseconds: 100), () {
               clearCategoryForm();
             });
@@ -1000,24 +1375,24 @@ class CategoryListViewState extends State<CategoryListView> {
           }
           return true;
         }
-        if (current is AddCategoryListModel) {
-          addCategoryListModel = current;
-          if (addCategoryListModel.errorResponse?.isUnauthorized == true) {
+        if (current is GetAddProductListModel) {
+          getAddProductListModel = current;
+          if (getAddProductListModel.errorResponse?.isUnauthorized == true) {
             _handle401Error();
             return true;
           }
-          if (addCategoryListModel.success == true) {
+          if (getAddProductListModel.success == true) {
             setState(() {
               catLoad = false;
               totalItems = int.parse(
-                  addCategoryListModel.totalCount.toString()); // API response
+                  getAddProductListModel.totalCount.toString()); // API response
               totalPages = (totalItems / rowsPerPage).ceil();
             });
           } else {
             setState(() {
               catLoad = false;
             });
-            showToast("No Category found", context, color: false);
+            showToast("No Products found", context, color: false);
           }
           return true;
         }
@@ -1030,8 +1405,6 @@ class CategoryListViewState extends State<CategoryListView> {
           if (getSingleCategoryModel.success == true) {
             setState(() {
               if (getSingleCategoryModel.data != null) {
-                categoryController.text =
-                    getSingleCategoryModel.data!.name ?? "";
                 isAvailable = getSingleCategoryModel.data!.isDefault ?? false;
                 apiImageUrl = getSingleCategoryModel.data!.image;
               }
@@ -1056,8 +1429,13 @@ class CategoryListViewState extends State<CategoryListView> {
             bool? statusValue = selectedStatus == "All"
                 ? null
                 : (selectedStatus == "Available" ? true : false);
-            context.read<CategoryBloc>().add(AddCategory(searchController.text,
-                locationId ?? "", statusValue, offset, rowsPerPage));
+            context.read<ProductBloc>().add(AddProduct(
+                searchController.text,
+                locationId ?? "",
+                statusValue,
+                offset,
+                rowsPerPage,
+                catId ?? ""));
             Future.delayed(Duration(milliseconds: 100), () {
               clearCategoryForm();
             });
@@ -1071,29 +1449,73 @@ class CategoryListViewState extends State<CategoryListView> {
           }
           return true;
         }
-        if (current is DeleteCategoryModel) {
-          deleteCategoryModel = current;
-          if (deleteCategoryModel.errorResponse?.isUnauthorized == true) {
+        if (current is DeleteProductsModel) {
+          deleteProductModel = current;
+          if (deleteProductModel.errorResponse?.isUnauthorized == true) {
             _handle401Error();
             return true;
           }
-          if (deleteCategoryModel.success == true) {
+          if (deleteProductModel.success == true) {
             setState(() {
               deleteLoad = false;
               catLoad = true;
-              showToast("${deleteCategoryModel.message}", context, color: true);
+              showToast("${deleteProductModel.message}", context, color: true);
             });
             bool? statusValue = selectedStatus == "All"
                 ? null
                 : (selectedStatus == "Available" ? true : false);
-            context.read<CategoryBloc>().add(AddCategory(searchController.text,
-                locationId ?? "", statusValue, offset, rowsPerPage));
-          } else if (deleteCategoryModel.errorResponse != null) {
-            showToast("${deleteCategoryModel.errorResponse?.message}", context,
+            context.read<ProductBloc>().add(AddProduct(
+                searchController.text,
+                locationId ?? "",
+                statusValue,
+                offset,
+                rowsPerPage,
+                catId ?? ""));
+          } else if (deleteProductModel.errorResponse != null) {
+            debugPrint(
+                "deleteError:${deleteProductModel.errorResponse?.message}");
+            showToast("${deleteProductModel.errorResponse?.message}", context,
                 color: false);
             setState(() {
               deleteLoad = false;
             });
+          }
+          return true;
+        }
+        if (current is GetStockMaintanencesModel) {
+          getStockMaintanencesModel = current;
+          if (getStockMaintanencesModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (getStockMaintanencesModel.success == true) {
+            setState(() {
+              stockDetailsLoad = false;
+            });
+          } else {
+            setState(() {
+              stockDetailsLoad = false;
+            });
+            showToast("No Stock found", context, color: false);
+          }
+          return true;
+        }
+        if (current is GetCategoryForAddProductModel) {
+          getCategoryForAddProductModel = current;
+          if (getCategoryForAddProductModel.errorResponse?.isUnauthorized ==
+              true) {
+            _handle401Error();
+            return true;
+          }
+          if (getCategoryForAddProductModel.success == true) {
+            setState(() {
+              proCatLoad = false;
+            });
+          } else {
+            setState(() {
+              proCatLoad = false;
+            });
+            showToast("No Category found", context, color: false);
           }
           return true;
         }
