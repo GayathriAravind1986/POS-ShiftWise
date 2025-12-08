@@ -7,12 +7,13 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Alertbox/snackBarAlert.dart';
 import 'package:simple/Bloc/AddProduct/add_edit_product_bloc.dart';
-import 'package:simple/ModelClass/AddCategory/getSingleCategoryModel.dart';
 import 'package:simple/ModelClass/AddCategory/putCategoryModel.dart';
 import 'package:simple/ModelClass/AddProduct/DeleteProductsModel.dart';
 import 'package:simple/ModelClass/AddProduct/getAddProductListModel.dart';
 import 'package:simple/ModelClass/AddProduct/getCategoryForAddProductModel.dart';
+import 'package:simple/ModelClass/AddProduct/getSingleAddProductModel.dart';
 import 'package:simple/ModelClass/AddProduct/postAddProductModel.dart';
+import 'package:simple/ModelClass/AddProduct/putAddProductModel.dart';
 import 'package:simple/ModelClass/ShopDetails/getStockMaintanencesModel.dart';
 import 'package:simple/ModelClass/StockIn/getLocationModel.dart';
 import 'package:simple/Reusable/color.dart';
@@ -55,8 +56,9 @@ class ProductListViewState extends State<ProductListView> {
       GetCategoryForAddProductModel();
   PostAddProductModel postAddProductModel = PostAddProductModel();
   GetAddProductListModel getAddProductListModel = GetAddProductListModel();
-  GetSingleCategoryModel getSingleCategoryModel = GetSingleCategoryModel();
-  PutCategoryModel putCategoryModel = PutCategoryModel();
+  GetSingleAddProductModel getSingleAddProductModel =
+      GetSingleAddProductModel();
+  PutAddProductModel putAddProductModel = PutAddProductModel();
   DeleteProductsModel deleteProductModel = DeleteProductsModel();
   GetStockMaintanencesModel getStockMaintanencesModel =
       GetStockMaintanencesModel();
@@ -99,6 +101,7 @@ class ProductListViewState extends State<ProductListView> {
   bool isEdit = false;
   String? errorMessage;
   String? catId;
+  String? proId;
   String? catSaveId;
   String? apiImageUrl;
 
@@ -185,6 +188,17 @@ class ProductListViewState extends State<ProductListView> {
       categoryImage = null;
       categoryImageBytes = null;
       apiImageUrl = null;
+      selectedCategorySave = null;
+      proId = null;
+      basePriceController.clear();
+      parcelPriceController.clear();
+      acPriceController.clear();
+      hdPriceController.clear();
+      swiggyPriceController.clear();
+      productController.clear();
+      codeController.clear();
+      isStockTrack = false;
+      isDailyStock = false;
     });
     context.read<ProductBloc>().add(StockInLocation());
     context.read<ProductBloc>().add(StockDetails());
@@ -670,40 +684,55 @@ class ProductListViewState extends State<ProductListView> {
                           ? SpinKitCircle(color: appPrimaryColor, size: 30)
                           : ElevatedButton(
                               onPressed: () {
-                                // if (getLocationModel.data!.locationName ==
-                                //     null) {
-                                //   showToast("Location not found", context,
-                                //       color: false);
-                                // } else if (categoryController.text.isEmpty) {
-                                //   showToast("Enter category name", context,
-                                //       color: false);
-                                // } else {
-                                //   setState(() {
-                                //     editLoad = true;
-                                //     String finalImageName =
-                                //         pickedImageName ?? "";
-                                //     Uint8List? finalBytes = categoryImageBytes;
-                                //     File? finalFile = categoryImage;
-                                //     debugPrint("finalByte:$finalBytes");
-                                //     debugPrint("finalFile:$finalFile");
-                                //     debugPrint("apiImage:$apiImageUrl");
-                                //     if (finalBytes == null &&
-                                //         finalFile == null) {
-                                //       finalImageName = apiImageUrl ?? "";
-                                //     }
-                                //     context
-                                //         .read<ProductBloc>()
-                                //         .add(UpdateCategory(
-                                //           catId.toString(),
-                                //           categoryController.text,
-                                //           isAvailable,
-                                //           locationId.toString(),
-                                //           finalImageName,
-                                //           imageBytes: finalBytes,
-                                //           imageFile: finalFile,
-                                //         ));
-                                //   });
-                                //  }
+                                if (getLocationModel.data!.locationName ==
+                                    null) {
+                                  showToast("Location not found", context,
+                                      color: false);
+                                } else if (selectedCategorySave == null) {
+                                  showToast("Select Category", context,
+                                      color: false);
+                                } else if (productController.text.isEmpty) {
+                                  showToast("Enter product name", context,
+                                      color: false);
+                                } else if (basePriceController.text.isEmpty) {
+                                  showToast("Enter Base Price", context,
+                                      color: false);
+                                } else if (parcelPriceController.text.isEmpty) {
+                                  showToast("Enter Parcel Price", context,
+                                      color: false);
+                                } else if (acPriceController.text.isEmpty) {
+                                  showToast("Enter AC Price", context,
+                                      color: false);
+                                } else if (hdPriceController.text.isEmpty) {
+                                  showToast("Enter HD Price", context,
+                                      color: false);
+                                } else if (swiggyPriceController.text.isEmpty) {
+                                  showToast("Enter Swiggy Price", context,
+                                      color: false);
+                                } else {
+                                  setState(() {
+                                    editLoad = true;
+                                    context.read<ProductBloc>().add(
+                                        UpdateProduct(
+                                            proId.toString(),
+                                            productController.text,
+                                            codeController.text,
+                                            basePriceController.text,
+                                            parcelPriceController.text,
+                                            acPriceController.text,
+                                            hdPriceController.text,
+                                            swiggyPriceController.text,
+                                            isAvailable,
+                                            false,
+                                            catSaveId.toString(),
+                                            locationId.toString(),
+                                            isDailyStock,
+                                            isStockTrack,
+                                            pickedImageName.toString(),
+                                            imageBytes: categoryImageBytes,
+                                            imageFile: categoryImage));
+                                  });
+                                }
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: appPrimaryColor,
@@ -1247,7 +1276,7 @@ class ProductListViewState extends State<ProductListView> {
                                                         onPressed: () {
                                                           setState(() {
                                                             isEdit = true;
-                                                            catId = item.id
+                                                            proId = item.id
                                                                 .toString();
                                                             debugPrint(
                                                                 "isEdit_$isEdit");
@@ -1255,9 +1284,8 @@ class ProductListViewState extends State<ProductListView> {
                                                           context
                                                               .read<
                                                                   ProductBloc>()
-                                                              .add(CategoryById(
-                                                                  catId
-                                                                      .toString()));
+                                                              .add(ProductById(proId
+                                                                  .toString()));
                                                         },
                                                         padding:
                                                             EdgeInsets.zero,
@@ -1396,17 +1424,38 @@ class ProductListViewState extends State<ProductListView> {
           }
           return true;
         }
-        if (current is GetSingleCategoryModel) {
-          getSingleCategoryModel = current;
-          if (getSingleCategoryModel.errorResponse?.isUnauthorized == true) {
+        if (current is GetSingleAddProductModel) {
+          getSingleAddProductModel = current;
+          if (getSingleAddProductModel.errorResponse?.isUnauthorized == true) {
             _handle401Error();
             return true;
           }
-          if (getSingleCategoryModel.success == true) {
+          if (getSingleAddProductModel.success == true) {
             setState(() {
-              if (getSingleCategoryModel.data != null) {
-                isAvailable = getSingleCategoryModel.data!.isDefault ?? false;
-                apiImageUrl = getSingleCategoryModel.data!.image;
+              if (getSingleAddProductModel.data != null) {
+                catSaveId =
+                    getSingleAddProductModel.data!.category!.id.toString();
+                selectedCategorySave =
+                    getSingleAddProductModel.data!.category!.name.toString();
+                productController.text =
+                    getSingleAddProductModel.data!.name.toString();
+                codeController.text =
+                    getSingleAddProductModel.data!.shortCode.toString();
+                basePriceController.text =
+                    getSingleAddProductModel.data!.basePrice.toString();
+                parcelPriceController.text =
+                    getSingleAddProductModel.data!.parcelPrice.toString();
+                acPriceController.text =
+                    getSingleAddProductModel.data!.acPrice.toString();
+                hdPriceController.text =
+                    getSingleAddProductModel.data!.hdPrice.toString();
+                swiggyPriceController.text =
+                    getSingleAddProductModel.data!.swiggyPrice.toString();
+                isAvailable = getSingleAddProductModel.data!.isDefault ?? false;
+                apiImageUrl = getSingleAddProductModel.data!.image;
+                isStockTrack = getSingleAddProductModel.data!.isStock ?? false;
+                isDailyStock =
+                    getSingleAddProductModel.data!.dailyStockClear ?? false;
               }
               expenseShowLoad = false;
             });
@@ -1417,14 +1466,13 @@ class ProductListViewState extends State<ProductListView> {
           }
           return true;
         }
-        if (current is PutCategoryModel) {
-          putCategoryModel = current;
-          if (putCategoryModel.errorResponse?.isUnauthorized == true) {
+        if (current is PutAddProductModel) {
+          putAddProductModel = current;
+          if (putAddProductModel.errorResponse?.isUnauthorized == true) {
             _handle401Error();
             return true;
           }
-          if (putCategoryModel.success == true) {
-            showToast("Category Updated Successfully", context, color: true);
+          if (putAddProductModel.success == true) {
             _refreshEditData();
             bool? statusValue = selectedStatus == "All"
                 ? null
@@ -1441,6 +1489,7 @@ class ProductListViewState extends State<ProductListView> {
             });
             setState(() {
               editLoad = false;
+              showToast("Product Updated Successfully", context, color: true);
             });
           } else {
             setState(() {

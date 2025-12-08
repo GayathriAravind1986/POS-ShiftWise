@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Alertbox/snackBarAlert.dart';
 import 'package:simple/Bloc/Report/report_bloc.dart';
+import 'package:simple/ModelClass/Order/getCurrentShiftModel.dart';
 import 'package:simple/ModelClass/Report/Get_report_with_ordertype_model.dart';
 import 'package:simple/ModelClass/Table/Get_table_model.dart';
 import 'package:simple/ModelClass/User/getUserModel.dart';
@@ -50,9 +51,11 @@ class ReportViewViewState extends State<ReportViewView> {
   GetTableModel getTableModel = GetTableModel();
   GetWaiterModel getWaiterModel = GetWaiterModel();
   GetUserModel getUserModel = GetUserModel();
+  GetCurrentShiftModel getCurrentShiftModel = GetCurrentShiftModel();
   dynamic selectedValue;
   dynamic selectedValueWaiter;
   dynamic selectedValueUser;
+  dynamic selectedValueShift;
   dynamic tableId;
   dynamic waiterId;
   dynamic userId;
@@ -118,8 +121,13 @@ class ReportViewViewState extends State<ReportViewView> {
           String formattedToDate = DateFormat('yyyy-MM-dd').format(_toDate!);
 
           context.read<ReportTodayBloc>().add(
-                ReportTodayList(formattedFromDate, formattedToDate,
-                    tableId ?? "", waiterId ?? "", userId ?? ""),
+                ReportTodayList(
+                    formattedFromDate,
+                    formattedToDate,
+                    tableId ?? "",
+                    waiterId ?? "",
+                    userId ?? "",
+                    selectedValueShift ?? ""),
               );
         } else if (_fromDate != null && _toDate == null) {
           String formattedFromDate =
@@ -127,8 +135,13 @@ class ReportViewViewState extends State<ReportViewView> {
           String formattedToDate = DateFormat('yyyy-MM-dd').format(now);
 
           context.read<ReportTodayBloc>().add(
-                ReportTodayList(formattedFromDate, formattedToDate,
-                    tableId ?? "", waiterId ?? "", userId ?? ""),
+                ReportTodayList(
+                    formattedFromDate,
+                    formattedToDate,
+                    tableId ?? "",
+                    waiterId ?? "",
+                    userId ?? "",
+                    selectedValueShift ?? ""),
               );
         }
       });
@@ -139,7 +152,7 @@ class ReportViewViewState extends State<ReportViewView> {
     if (!mounted || !context.mounted) return;
     context.read<ReportTodayBloc>().add(
           ReportTodayList(todayApiDate, todayApiDate, tableId ?? "",
-              waiterId ?? "", userId ?? ""),
+              waiterId ?? "", userId ?? "", selectedValueShift ?? ""),
         );
     setState(() {
       reportLoad = true;
@@ -152,6 +165,7 @@ class ReportViewViewState extends State<ReportViewView> {
     context.read<ReportTodayBloc>().add(TableDine());
     context.read<ReportTodayBloc>().add(WaiterDine());
     context.read<ReportTodayBloc>().add(UserDetails());
+    context.read<ReportTodayBloc>().add(CurrentShift());
     if (widget.hasRefreshedReport == true) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         setState(() {
@@ -169,7 +183,7 @@ class ReportViewViewState extends State<ReportViewView> {
       });
       context.read<ReportTodayBloc>().add(
             ReportTodayList(todayApiDate, todayApiDate, tableId ?? "",
-                waiterId ?? "", userId ?? ""),
+                waiterId ?? "", userId ?? "", selectedValueShift ?? ""),
           );
     }
   }
@@ -179,17 +193,19 @@ class ReportViewViewState extends State<ReportViewView> {
       selectedValue = null;
       selectedValueWaiter = null;
       selectedValueUser = null;
+      selectedValueShift = null;
       tableId = null;
       waiterId = null;
       userId = null;
     });
     context.read<ReportTodayBloc>().add(
           ReportTodayList(todayApiDate, todayApiDate, tableId ?? "",
-              waiterId ?? "", userId ?? ""),
+              waiterId ?? "", userId ?? "", selectedValueShift ?? ""),
         );
     context.read<ReportTodayBloc>().add(TableDine());
     context.read<ReportTodayBloc>().add(WaiterDine());
     context.read<ReportTodayBloc>().add(UserDetails());
+    context.read<ReportTodayBloc>().add(CurrentShift());
     widget.reportKey?.currentState?.refreshReport();
   }
 
@@ -288,7 +304,8 @@ class ReportViewViewState extends State<ReportViewView> {
                                                   todayApiDate,
                                                   tableId ?? "",
                                                   waiterId ?? "",
-                                                  userId ?? ""),
+                                                  userId ?? "",
+                                                  selectedValueShift ?? ""),
                                             );
                                       }
                                     });
@@ -335,7 +352,8 @@ class ReportViewViewState extends State<ReportViewView> {
                                                   todayApiDate,
                                                   tableId ?? "",
                                                   waiterId ?? "",
-                                                  userId ?? ""),
+                                                  userId ?? "",
+                                                  selectedValueShift ?? ""),
                                             );
                                       }
                                     });
@@ -399,7 +417,8 @@ class ReportViewViewState extends State<ReportViewView> {
                                         todayApiDate,
                                         tableId ?? "",
                                         waiterId ?? "",
-                                        userId ?? ""),
+                                        userId ?? "",
+                                        selectedValueShift ?? ""),
                                   );
                             });
                           }
@@ -461,7 +480,8 @@ class ReportViewViewState extends State<ReportViewView> {
                                         todayApiDate,
                                         tableId ?? "",
                                         waiterId ?? "",
-                                        userId ?? ""),
+                                        userId ?? "",
+                                        selectedValueShift ?? ""),
                                   );
                             });
                           }
@@ -524,7 +544,8 @@ class ReportViewViewState extends State<ReportViewView> {
                                       todayApiDate,
                                       tableId ?? "",
                                       waiterId ?? "",
-                                      userId ?? ""),
+                                      userId ?? "",
+                                      selectedValueShift ?? ""),
                                 );
                           }
                         },
@@ -534,6 +555,54 @@ class ReportViewViewState extends State<ReportViewView> {
                             blackColor,
                             weight: FontWeight.normal,
                           ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      margin: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: appPrimaryColor,
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedValueShift,
+                          isExpanded: true,
+                          hint: Text(
+                            "-- Select Shift --",
+                            style: MyTextStyle.f14(
+                              blackColor,
+                              weight: FontWeight.normal,
+                            ),
+                          ),
+                          items: getCurrentShiftModel.data?.shiftData
+                              ?.map((shift) => DropdownMenuItem(
+                                    value: shift,
+                                    child: Text(shift),
+                                  ))
+                              .toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedValueShift = value;
+                              debugPrint("selectedShift:$selectedValueShift");
+                              context.read<ReportTodayBloc>().add(
+                                    ReportTodayList(
+                                        todayApiDate,
+                                        todayApiDate,
+                                        tableId ?? "",
+                                        waiterId ?? "",
+                                        userId ?? "",
+                                        selectedValueShift ?? ""),
+                                  );
+                            });
+                          },
                         ),
                       ),
                     ),
@@ -1371,6 +1440,24 @@ class ReportViewViewState extends State<ReportViewView> {
               tableLoad = false;
             });
             showToast("No Operator found", context, color: false);
+          }
+          return true;
+        }
+        if (current is GetCurrentShiftModel) {
+          getCurrentShiftModel = current;
+          if (getCurrentShiftModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (getCurrentShiftModel.success == true) {
+            setState(() {
+              tableLoad = false;
+            });
+          } else {
+            setState(() {
+              tableLoad = false;
+            });
+            showToast("No Shift found", context, color: false);
           }
           return true;
         }

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simple/Alertbox/snackBarAlert.dart';
 import 'package:simple/Bloc/Order/order_list_bloc.dart';
+import 'package:simple/ModelClass/Order/getCurrentShiftModel.dart';
 import 'package:simple/ModelClass/Order/get_order_list_today_model.dart';
 import 'package:simple/ModelClass/Table/Get_table_model.dart';
 import 'package:simple/ModelClass/User/getUserModel.dart';
@@ -55,9 +56,11 @@ class OrderTabViewViewState extends State<OrderTabViewView>
   GetWaiterModel getWaiterModel = GetWaiterModel();
   GetUserModel getUserModel = GetUserModel();
   GetOrderListTodayModel getOrderListTodayModel = GetOrderListTodayModel();
+  GetCurrentShiftModel getCurrentShiftModel = GetCurrentShiftModel();
   dynamic selectedValue;
   dynamic selectedValueWaiter;
   dynamic selectedValueUser;
+  dynamic selectedValueShift;
   dynamic tableId;
   dynamic waiterId;
   dynamic userId;
@@ -91,6 +94,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
           selectedValue = null;
           selectedValueWaiter = null;
           selectedValueUser = null;
+          selectedValueShift = null;
           tableId = null;
           waiterId = null;
           userId = null;
@@ -108,6 +112,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
       selectedValue = null;
       selectedValueWaiter = null;
       selectedValueUser = null;
+      selectedValueShift = null;
       tableId = null;
       waiterId = null;
       userId = null;
@@ -115,7 +120,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
       isLoadingOrders = true;
     });
     context.read<OrderTodayBloc>().add(
-          OrderTodayList(todayDate, todayDate, "", "", ""),
+          OrderTodayList(todayDate, todayDate, "", "", "", ""),
         );
   }
 
@@ -127,6 +132,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
       selectedValue = null;
       selectedValueWaiter = null;
       selectedValueUser = null;
+      selectedValueShift = null;
       tableId = null;
       waiterId = null;
       userId = null;
@@ -134,11 +140,12 @@ class OrderTabViewViewState extends State<OrderTabViewView>
       isLoadingOrders = true;
     });
     context.read<OrderTodayBloc>().add(
-          OrderTodayList(todayDate, todayDate, "", "", ""),
+          OrderTodayList(todayDate, todayDate, "", "", "", ""),
         );
     context.read<OrderTodayBloc>().add(TableDine());
     context.read<OrderTodayBloc>().add(WaiterDine());
     context.read<OrderTodayBloc>().add(UserDetails());
+    context.read<OrderTodayBloc>().add(CurrentShift());
   }
 
   void _refreshAllTabs() {
@@ -155,6 +162,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
             tableId ?? "",
             waiterId ?? "",
             userId ?? "",
+            selectedValueShift ?? "",
           ),
         );
   }
@@ -164,6 +172,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
       selectedValue = null;
       selectedValueWaiter = null;
       selectedValueUser = null;
+      selectedValueShift = null;
       tableId = null;
       waiterId = null;
       userId = null;
@@ -174,6 +183,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
     context.read<OrderTodayBloc>().add(TableDine());
     context.read<OrderTodayBloc>().add(WaiterDine());
     context.read<OrderTodayBloc>().add(UserDetails());
+    context.read<OrderTodayBloc>().add(CurrentShift());
     context.read<OrderTodayBloc>().add(
           OrderTodayList(
             todayDate,
@@ -181,6 +191,7 @@ class OrderTabViewViewState extends State<OrderTabViewView>
             tableId ?? "",
             waiterId ?? "",
             userId ?? "",
+            selectedValueShift ?? "",
           ),
         );
   }
@@ -261,6 +272,18 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                     padding: const EdgeInsets.all(10.0),
                     child: Text(
                       'Select Operator',
+                      style: MyTextStyle.f14(
+                        blackColor,
+                        weight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Text(
+                      'Select Shift',
                       style: MyTextStyle.f14(
                         blackColor,
                         weight: FontWeight.bold,
@@ -437,6 +460,46 @@ class OrderTabViewViewState extends State<OrderTabViewView>
                     ),
                   ),
                 ),
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 18,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: appPrimaryColor,
+                      ),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedValueShift,
+                        isExpanded: true,
+                        hint: Text(
+                          "-- Select Shift --",
+                          style: MyTextStyle.f14(
+                            blackColor,
+                            weight: FontWeight.normal,
+                          ),
+                        ),
+                        items: getCurrentShiftModel.data?.shiftData
+                            ?.map((shift) => DropdownMenuItem(
+                                  value: shift,
+                                  child: Text(shift),
+                                ))
+                            .toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedValueShift = value;
+                            debugPrint("selectedShift:$selectedValueShift");
+                            _onFilterChanged();
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
             TabBar(
@@ -590,6 +653,24 @@ class OrderTabViewViewState extends State<OrderTabViewView>
               tableLoad = false;
             });
             showToast("No Operator found", context, color: false);
+          }
+          return true;
+        }
+        if (current is GetCurrentShiftModel) {
+          getCurrentShiftModel = current;
+          if (getCurrentShiftModel.errorResponse?.isUnauthorized == true) {
+            _handle401Error();
+            return true;
+          }
+          if (getCurrentShiftModel.success == true) {
+            setState(() {
+              tableLoad = false;
+            });
+          } else {
+            setState(() {
+              tableLoad = false;
+            });
+            showToast("No Shift found", context, color: false);
           }
           return true;
         }

@@ -60,22 +60,47 @@ class AddProduct extends ProductEvent {
       this.catId);
 }
 
-class CategoryById extends ProductEvent {
-  String categoryId;
-  CategoryById(this.categoryId);
+class ProductById extends ProductEvent {
+  String productId;
+  ProductById(this.productId);
 }
 
-class UpdateCategory extends ProductEvent {
-  String categoryId;
+class UpdateProduct extends ProductEvent {
+  String productId;
   String name;
+  String shortCode;
+  String basePrice;
+  String parcelPrice;
+  String acPrice;
+  String hdPrice;
+  String swiggyPrice;
   bool isDefault;
-  String locId;
+  bool hasAddons;
+  String category;
+  String locationId;
+  bool dailyStockClear;
+  bool isStock;
   String pickedImageName;
   final File? imageFile;
   final Uint8List? imageBytes;
-  UpdateCategory(this.categoryId, this.name, this.isDefault, this.locId,
+  UpdateProduct(
+      this.productId,
+      this.name,
+      this.shortCode,
+      this.basePrice,
+      this.parcelPrice,
+      this.acPrice,
+      this.hdPrice,
+      this.swiggyPrice,
+      this.isDefault,
+      this.hasAddons,
+      this.category,
+      this.locationId,
+      this.dailyStockClear,
+      this.isStock,
       this.pickedImageName,
-      {this.imageFile, this.imageBytes});
+      {this.imageFile,
+      this.imageBytes});
 }
 
 class DeleteProduct extends ProductEvent {
@@ -139,18 +164,33 @@ class ProductBloc extends Bloc<ProductEvent, dynamic> {
         emit(error);
       });
     });
-    on<CategoryById>((event, emit) async {
-      await ApiProvider().getSingleCategoryAPI(event.categoryId).then((value) {
+    on<ProductById>((event, emit) async {
+      await ApiProvider().getSingleAddProductAPI(event.productId).then((value) {
         emit(value);
       }).catchError((error) {
         emit(error);
       });
     });
-    on<UpdateCategory>((event, emit) async {
+    on<UpdateProduct>((event, emit) async {
       await ApiProvider()
-          .putCategoryAPI(event.categoryId, event.name, event.isDefault,
-              event.locId, event.pickedImageName,
-              imageFile: event.imageFile, imageBytes: event.imageBytes)
+          .putAddProductAPI(
+              event.productId,
+              event.name,
+              event.shortCode,
+              event.basePrice,
+              event.parcelPrice,
+              event.acPrice,
+              event.hdPrice,
+              event.swiggyPrice,
+              event.isDefault,
+              event.hasAddons,
+              event.category,
+              event.locationId,
+              event.dailyStockClear,
+              event.isStock,
+              event.pickedImageName,
+              imageFile: event.imageFile,
+              imageBytes: event.imageBytes)
           .then((value) {
         emit(value);
       }).catchError((error) {

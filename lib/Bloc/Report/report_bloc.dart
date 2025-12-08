@@ -9,8 +9,9 @@ class ReportTodayList extends ReportTodayEvent {
   String tableId;
   String waiterId;
   String operatorId;
-  ReportTodayList(
-      this.fromDate, this.toDate, this.tableId, this.waiterId, this.operatorId);
+  String shift;
+  ReportTodayList(this.fromDate, this.toDate, this.tableId, this.waiterId,
+      this.operatorId, this.shift);
 }
 
 class TableDine extends ReportTodayEvent {}
@@ -19,12 +20,14 @@ class WaiterDine extends ReportTodayEvent {}
 
 class UserDetails extends ReportTodayEvent {}
 
+class CurrentShift extends ReportTodayEvent {}
+
 class ReportTodayBloc extends Bloc<ReportTodayEvent, dynamic> {
   ReportTodayBloc() : super(dynamic) {
     on<ReportTodayList>((event, emit) async {
       await ApiProvider()
           .getReportTodayAPI(event.fromDate, event.toDate, event.tableId,
-              event.waiterId, event.operatorId)
+              event.waiterId, event.operatorId, event.shift)
           .then((value) {
         emit(value);
       }).catchError((error) {
@@ -47,6 +50,13 @@ class ReportTodayBloc extends Bloc<ReportTodayEvent, dynamic> {
     });
     on<UserDetails>((event, emit) async {
       await ApiProvider().getUserDetailsAPI().then((value) {
+        emit(value);
+      }).catchError((error) {
+        emit(error);
+      });
+    });
+    on<CurrentShift>((event, emit) async {
+      await ApiProvider().getCurrentShiftAPI().then((value) {
         emit(value);
       }).catchError((error) {
         emit(error);

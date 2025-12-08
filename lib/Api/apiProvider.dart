@@ -8,7 +8,9 @@ import 'package:simple/ModelClass/AddCategory/deleteCategoryModel.dart';
 import 'package:simple/ModelClass/AddProduct/DeleteProductsModel.dart';
 import 'package:simple/ModelClass/AddProduct/getAddProductListModel.dart';
 import 'package:simple/ModelClass/AddProduct/getCategoryForAddProductModel.dart';
+import 'package:simple/ModelClass/AddProduct/getSingleAddProductModel.dart';
 import 'package:simple/ModelClass/AddProduct/postAddProductModel.dart';
+import 'package:simple/ModelClass/AddProduct/putAddProductModel.dart';
 import 'package:simple/ModelClass/Authentication/Post_login_model.dart';
 import 'package:simple/ModelClass/Authentication/postShiftModel.dart';
 import 'package:simple/ModelClass/Cart/Post_Add_to_billing_model.dart';
@@ -27,6 +29,7 @@ import 'package:simple/ModelClass/Order/Delete_order_model.dart';
 import 'package:simple/ModelClass/Order/Get_view_order_model.dart';
 import 'package:simple/ModelClass/Order/Post_generate_order_model.dart';
 import 'package:simple/ModelClass/Order/Update_generate_order_model.dart';
+import 'package:simple/ModelClass/Order/getCurrentShiftModel.dart';
 import 'package:simple/ModelClass/Order/get_order_list_today_model.dart';
 import 'package:simple/ModelClass/Products/get_products_cat_model.dart';
 import 'package:simple/ModelClass/Report/Get_report_with_ordertype_model.dart';
@@ -495,19 +498,21 @@ class ApiProvider {
 
   /// orderToday - Fetch API Integration
   Future<GetOrderListTodayModel> getOrderTodayAPI(
-      String? fromDate,
-      String? toDate,
-      String? tableId,
-      String? waiterId,
-      String? operator) async {
+    String? fromDate,
+    String? toDate,
+    String? tableId,
+    String? waiterId,
+    String? operator,
+    String? shift,
+  ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
     debugPrint(
-        "baseUrlOrder:${Constants.baseUrl}api/generate-order?from_date=$fromDate&to_date=$toDate&tableNo=$tableId&waiter=$waiterId&operator=$operator");
+        "baseUrlOrder:${Constants.baseUrl}api/generate-order?from_date=$fromDate&to_date=$toDate&tableNo=$tableId&waiter=$waiterId&operator=$operator&shift=$shift");
     try {
       var dio = Dio();
       var response = await dio.request(
-        '${Constants.baseUrl}api/generate-order?from_date=$fromDate&to_date=$toDate&tableNo=$tableId&waiter=$waiterId&operator=$operator',
+        '${Constants.baseUrl}api/generate-order?from_date=$fromDate&to_date=$toDate&tableNo=$tableId&waiter=$waiterId&operator=$operator&shift=$shift',
         options: Options(
           method: 'GET',
           headers: {
@@ -542,16 +547,21 @@ class ApiProvider {
   }
 
   /// ReportToday - Fetch API Integration
-  Future<GetReportModel> getReportTodayAPI(String? fromDate, String? toDate,
-      String? tableId, String? waiterId, String? operatorId) async {
+  Future<GetReportModel> getReportTodayAPI(
+      String? fromDate,
+      String? toDate,
+      String? tableId,
+      String? waiterId,
+      String? operatorId,
+      String? shift) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
     debugPrint(
-        "baseUrlReport:'${Constants.baseUrl}api/generate-order/sales-reportwithordertype?from_date=$fromDate&to_date=$toDate&limit=200&tableNo=$tableId&waiter=$waiterId&operator=$operatorId");
+        "baseUrlReport:'${Constants.baseUrl}api/generate-order/sales-reportwithordertype?from_date=$fromDate&to_date=$toDate&limit=200&tableNo=$tableId&waiter=$waiterId&operator=$operatorId&shift=$shift");
     try {
       var dio = Dio();
       var response = await dio.request(
-        '${Constants.baseUrl}api/generate-order/sales-reportwithordertype?from_date=$fromDate&to_date=$toDate&limit=200&tableNo=$tableId&waiter=$waiterId&operator=$operatorId',
+        '${Constants.baseUrl}api/generate-order/sales-reportwithordertype?from_date=$fromDate&to_date=$toDate&limit=200&tableNo=$tableId&waiter=$waiterId&operator=$operatorId&shift=$shift',
         options: Options(
           method: 'GET',
           headers: {
@@ -807,8 +817,6 @@ class ApiProvider {
   Future<GetSupplierLocationModel> getSupplierAPI(String? locationId) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -852,8 +860,6 @@ class ApiProvider {
   Future<GetAddProductModel> getAddProductAPI(String? locationId) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -899,7 +905,6 @@ class ApiProvider {
       final String stockInPayloadJson) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("payload:$stockInPayloadJson");
     try {
       var data = stockInPayloadJson;
       debugPrint("data:$data");
@@ -947,8 +952,6 @@ class ApiProvider {
       String? locationId) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -999,7 +1002,6 @@ class ApiProvider {
   ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
     try {
       final dataMap = {
         "date": date,
@@ -1051,8 +1053,6 @@ class ApiProvider {
   Future<GetSingleExpenseModel> getSingleExpenseAPI(String? expenseId) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -1104,7 +1104,6 @@ class ApiProvider {
   ) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
     try {
       final dataMap = {
         "date": date,
@@ -1157,10 +1156,6 @@ class ApiProvider {
       String search, String locId, String catId, String payMethod) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-    debugPrint(
-        "BaseUrl:${Constants.baseUrl}api/expenses?limit=100&offset=0&search=$search&locationId=$locId&CategoryId=$catId&paymentMethod=$payMethod");
-
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -1204,10 +1199,6 @@ class ApiProvider {
   Future<GetShiftClosingModel> getShiftClosingAPI(String? date) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-    debugPrint(
-        "BaseUrl:${Constants.baseUrl}api/dashboard/dailyclosing?date=$date");
-
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -1266,7 +1257,6 @@ class ApiProvider {
       String differenceAmount) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
     try {
       final dataMap = {
         "date": date,
@@ -1330,7 +1320,6 @@ class ApiProvider {
       {File? imageFile, Uint8List? imageBytes}) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
     try {
       FormData formData;
       Map<String, dynamic> fields = {
@@ -1405,8 +1394,6 @@ class ApiProvider {
   Future<GetSingleCategoryModel> getSingleCategoryAPI(String? catId) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -1522,8 +1509,6 @@ class ApiProvider {
   Future<DeleteCategoryModel> deleteCategoryAPI(String? catId) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-    debugPrint("BaseUrl:${Constants.baseUrl}api/categories/$catId");
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -1568,10 +1553,6 @@ class ApiProvider {
       String locId, bool? isDefault, int offset, int limit) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-    debugPrint(
-        "BaseUrl:${Constants.baseUrl}api/categories?locationId=$locId&search=$search&limit=$limit&offset=$offset&isDefault=$isDefault");
-
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -1617,9 +1598,6 @@ class ApiProvider {
       String locId) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-    debugPrint(
-        "BaseUrl:${Constants.baseUrl}api/categories?locationId=$locId&filter=false");
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -1669,10 +1647,6 @@ class ApiProvider {
       String catId) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-    debugPrint(
-        "BaseUrl:${Constants.baseUrl}api/products?limit=$limit&offset=$offset&search=$search&locationId=$locId&categoryId=$catId&isDefault=$isDefault");
-
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -1716,8 +1690,6 @@ class ApiProvider {
   Future<DeleteProductsModel> deleteProductAPI(String? productId) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
-    debugPrint("BaseUrl:${Constants.baseUrl}api/products/$productId");
     try {
       var dio = Dio();
       var response = await dio.request(
@@ -1777,7 +1749,6 @@ class ApiProvider {
       Uint8List? imageBytes}) async {
     SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
     var token = sharedPreferences.getString("token");
-    debugPrint("token:$token");
     try {
       FormData formData;
       Map<String, dynamic> fields = {
@@ -1855,6 +1826,184 @@ class ApiProvider {
       return PostAddProductModel()..errorResponse = errorResponse;
     } catch (error) {
       return PostAddProductModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Single Add product - API Integration
+  Future<GetSingleAddProductModel> getSingleAddProductAPI(String? proId) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    debugPrint("token:$token");
+
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}api/products/$proId',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetSingleAddProductModel getSingleCategoryResponse =
+              GetSingleAddProductModel.fromJson(response.data);
+          return getSingleCategoryResponse;
+        }
+      } else {
+        return GetSingleAddProductModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetSingleAddProductModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetSingleAddProductModel()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return GetSingleAddProductModel()..errorResponse = errorResponse;
+    }
+  }
+
+  /// update Product  - API Integration
+  Future<PutAddProductModel> putAddProductAPI(
+      String proId,
+      String name,
+      String shortCode,
+      String basePrice,
+      String parcelPrice,
+      String acPrice,
+      String hdPrice,
+      String swiggyPrice,
+      bool isDefault,
+      bool hasAddons,
+      String category,
+      String locationId,
+      bool dailyStockClear,
+      bool isStock,
+      String pickedImageName,
+      {File? imageFile,
+      Uint8List? imageBytes}) async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    try {
+      FormData formData;
+      Map<String, dynamic> fields = {
+        'name': name,
+        'shortCode': shortCode,
+        'basePrice': basePrice,
+        'parcelPrice': parcelPrice,
+        'acPrice': acPrice,
+        'hdPrice': hdPrice,
+        'swiggyPrice': swiggyPrice,
+        'isDefault': isDefault,
+        'hasAddons': hasAddons,
+        'category': category,
+        'locationId': locationId,
+        'dailyStockClear': dailyStockClear,
+        'isStock': isStock
+      };
+      if (kIsWeb) {
+        if (imageBytes != null) {
+          final fileName =
+              pickedImageName.isNotEmpty ? pickedImageName : "image.png";
+
+          fields["image"] = MultipartFile.fromBytes(
+            imageBytes,
+            filename: fileName,
+            contentType: getMediaType(fileName),
+          );
+        }
+      } else {
+        if (imageFile != null) {
+          final fileName = pickedImageName.isNotEmpty
+              ? pickedImageName
+              : imageFile.path.split('/').last;
+
+          fields["image"] = await MultipartFile.fromFile(
+            imageFile.path,
+            filename: fileName,
+          );
+        }
+      }
+
+      formData = FormData.fromMap(fields);
+      var dio = Dio();
+      var response = await dio.put(
+        '${Constants.baseUrl}api/products/$proId',
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'multipart/form-data',
+          },
+        ),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        return PutAddProductModel.fromJson(response.data);
+      } else {
+        return PutAddProductModel()
+          ..errorResponse = ErrorResponse(
+            message: response.data['message'] ?? 'Unknown error',
+            statusCode: response.statusCode,
+          );
+      }
+    } on DioException catch (dioError) {
+      return PutAddProductModel()..errorResponse = handleError(dioError);
+    } catch (error) {
+      return PutAddProductModel()..errorResponse = handleError(error);
+    }
+  }
+
+  /// Current shift - API Integration
+  Future<GetCurrentShiftModel> getCurrentShiftAPI() async {
+    SharedPreferences sharedPreferences = await SharedPreferences.getInstance();
+    var token = sharedPreferences.getString("token");
+    try {
+      var dio = Dio();
+      var response = await dio.request(
+        '${Constants.baseUrl}auth/users/currentshift',
+        options: Options(
+          method: 'GET',
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200 && response.data != null) {
+        if (response.data['success'] == true) {
+          GetCurrentShiftModel getCurrentShiftResponse =
+              GetCurrentShiftModel.fromJson(response.data);
+          return getCurrentShiftResponse;
+        }
+      } else {
+        return GetCurrentShiftModel()
+          ..errorResponse = ErrorResponse(
+            message: "Error: ${response.data['message'] ?? 'Unknown error'}",
+            statusCode: response.statusCode,
+          );
+      }
+      return GetCurrentShiftModel()
+        ..errorResponse = ErrorResponse(
+          message: "Unexpected error occurred.",
+          statusCode: 500,
+        );
+    } on DioException catch (dioError) {
+      final errorResponse = handleError(dioError);
+      return GetCurrentShiftModel()..errorResponse = errorResponse;
+    } catch (error) {
+      final errorResponse = handleError(error);
+      return GetCurrentShiftModel()..errorResponse = errorResponse;
     }
   }
 

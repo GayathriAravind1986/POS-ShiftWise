@@ -147,127 +147,136 @@ class _ThermalReportReceiptDialogState
             backgroundColor: Colors.transparent,
             insetPadding:
                 const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-            child: SingleChildScrollView(
-              child: Container(
-                width: size.width * 0.4,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: whiteColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  children: [
-                    // Header
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Center(
-                          child: const Text(
-                            "Report",
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
+            child: Stack(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 80),
+                  child: SingleChildScrollView(
+                    child: Container(
+                      width: size.width * 0.4,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: whiteColor,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        children: [
+                          // Header
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Center(
+                                child: const Text(
+                                  "Report",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: () => Navigator.pop(context),
+                                icon: const Icon(Icons.close),
+                              ),
+                            ],
                           ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.close),
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+
+                          // Thermal Receipt Widget
+                          RepaintBoundary(
+                            key: reportKey,
+                            child: getReportReceiptWidget(
+                                businessName: businessName,
+                                tamilTagline: "",
+                                address: address,
+                                phone: phone,
+                                itemsLine: itemsLine,
+                                itemsParcel: itemsParcel,
+                                itemsAc: itemsAc,
+                                itemsHd: itemsHd,
+                                itemsSwiggy: itemsSwiggy,
+                                reportDate: date,
+                                takenBy: userName,
+                                tableName: tableName,
+                                waiterName: waiterName,
+                                lineAmount: lineAmount,
+                                lineQty: lineQty,
+                                parcelAmount: parcelAmount,
+                                parcelQty: parcelQty,
+                                acAmount: acAmount,
+                                acQty: acQty,
+                                hdAmount: hdAmount,
+                                hdQty: hdQty,
+                                swiggyAmount: swiggyAmount,
+                                swiggyQty: swiggyQty,
+                                totalQuantity: totalQty,
+                                totalAmount: totalAmount,
+                                fromDate: fromDate,
+                                toDate: toDate,
+                                location: location,
+                                showItems: widget.showItems),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Close Button
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
+                  ),
+                ),
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () async {
+                          try {
+                            await Future.delayed(
+                                const Duration(milliseconds: 300));
+                            await WidgetsBinding.instance.endOfFrame;
+                            Uint8List? imageBytes =
+                                await captureMonochromeReport(reportKey);
 
-                    // Thermal Receipt Widget
-                    RepaintBoundary(
-                      key: reportKey,
-                      child: getReportReceiptWidget(
-                          businessName: businessName,
-                          tamilTagline: "",
-                          address: address,
-                          phone: phone,
-                          itemsLine: itemsLine,
-                          itemsParcel: itemsParcel,
-                          itemsAc: itemsAc,
-                          itemsHd: itemsHd,
-                          itemsSwiggy: itemsSwiggy,
-                          reportDate: date,
-                          takenBy: userName,
-                          tableName: tableName,
-                          waiterName: waiterName,
-                          lineAmount: lineAmount,
-                          lineQty: lineQty,
-                          parcelAmount: parcelAmount,
-                          parcelQty: parcelQty,
-                          acAmount: acAmount,
-                          acQty: acQty,
-                          hdAmount: hdAmount,
-                          hdQty: hdQty,
-                          swiggyAmount: swiggyAmount,
-                          swiggyQty: swiggyQty,
-                          totalQuantity: totalQty,
-                          totalAmount: totalAmount,
-                          fromDate: fromDate,
-                          toDate: toDate,
-                          location: location,
-                          showItems: widget.showItems),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Action Buttons
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            try {
-                              await Future.delayed(
-                                  const Duration(milliseconds: 300));
-                              await WidgetsBinding.instance.endOfFrame;
-                              Uint8List? imageBytes =
-                                  await captureMonochromeReport(reportKey);
-
-                              if (imageBytes != null) {
-                                await printerService.init();
-                                await printerService.printBitmap(imageBytes);
-                                // await Future.delayed(
-                                //     const Duration(seconds: 2));
-                                await printerService.fullCut();
-                                Navigator.pop(context);
-                              }
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Print failed: $e")),
-                              );
+                            if (imageBytes != null) {
+                              await printerService.init();
+                              await printerService.printBitmap(imageBytes);
+                              // await Future.delayed(
+                              //     const Duration(seconds: 2));
+                              await printerService.fullCut();
+                              Navigator.pop(context);
                             }
-                          },
-                          icon: const Icon(Icons.print),
-                          label: const Text("Print"),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: greenColor,
-                            foregroundColor: whiteColor,
-                          ),
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Print failed: $e")),
+                            );
+                          }
+                        },
+                        icon: const Icon(Icons.print),
+                        label: const Text("Print(Imin)"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: greenColor,
+                          foregroundColor: whiteColor,
                         ),
-                        horizontalSpace(width: 10),
-                        SizedBox(
-                          width: size.width * 0.09,
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text(
-                              "CLOSE",
-                              style: TextStyle(color: appPrimaryColor),
-                            ),
-                          ),
+                      ),
+                      horizontalSpace(width: 10),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        label: const Text("CLOSE"),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: appPrimaryColor,
+                          foregroundColor: whiteColor,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Close Button
-                  ],
-                ),
-              ),
+                      ),
+                    ],
+                  ),
+                )
+              ],
             ),
           );
   }

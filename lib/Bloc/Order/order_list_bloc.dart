@@ -9,8 +9,9 @@ class OrderTodayList extends OrderTodayEvent {
   String tableId;
   String waiterId;
   String userId;
-  OrderTodayList(
-      this.fromDate, this.toDate, this.tableId, this.waiterId, this.userId);
+  String shift;
+  OrderTodayList(this.fromDate, this.toDate, this.tableId, this.waiterId,
+      this.userId, this.shift);
 }
 
 class DeleteOrder extends OrderTodayEvent {
@@ -31,6 +32,8 @@ class UserDetails extends OrderTodayEvent {}
 
 class StockDetails extends OrderTodayEvent {}
 
+class CurrentShift extends OrderTodayEvent {}
+
 class UpdateOrder extends OrderTodayEvent {
   final String orderPayloadJson;
   String? orderId;
@@ -42,7 +45,7 @@ class OrderTodayBloc extends Bloc<OrderTodayEvent, dynamic> {
     on<OrderTodayList>((event, emit) async {
       await ApiProvider()
           .getOrderTodayAPI(event.fromDate, event.toDate, event.tableId,
-              event.waiterId, event.userId)
+              event.waiterId, event.userId, event.shift)
           .then((value) {
         emit(value);
       }).catchError((error) {
@@ -86,6 +89,13 @@ class OrderTodayBloc extends Bloc<OrderTodayEvent, dynamic> {
     });
     on<StockDetails>((event, emit) async {
       await ApiProvider().getStockDetailsAPI().then((value) {
+        emit(value);
+      }).catchError((error) {
+        emit(error);
+      });
+    });
+    on<CurrentShift>((event, emit) async {
+      await ApiProvider().getCurrentShiftAPI().then((value) {
         emit(value);
       }).catchError((error) {
         emit(error);

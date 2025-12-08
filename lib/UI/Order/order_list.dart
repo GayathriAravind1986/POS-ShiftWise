@@ -39,6 +39,7 @@ class OrderView extends StatelessWidget {
   String? selectedWaiterName;
   String? selectOperator;
   String? operatorShared;
+  String? selectedShiftName;
   final GetOrderListTodayModel? sharedOrderData;
   final bool isLoading;
 
@@ -49,6 +50,7 @@ class OrderView extends StatelessWidget {
     this.selectedTableName,
     this.selectedWaiterName,
     this.selectOperator,
+    this.selectedShiftName,
     this.operatorShared,
     this.sharedOrderData,
     this.isLoading = false,
@@ -62,6 +64,7 @@ class OrderView extends StatelessWidget {
       selectedTableName: selectedTableName,
       selectedWaiterName: selectedWaiterName,
       selectOperator: selectOperator,
+      selectedShiftName: selectedShiftName,
       operatorShared: operatorShared,
       sharedOrderData: sharedOrderData,
       isLoading: isLoading,
@@ -74,6 +77,7 @@ class OrderViewView extends StatefulWidget {
   String? selectedTableName;
   String? selectedWaiterName;
   String? selectOperator;
+  String? selectedShiftName;
   String? operatorShared;
 
   final GetOrderListTodayModel? sharedOrderData;
@@ -85,6 +89,7 @@ class OrderViewView extends StatefulWidget {
     this.selectedTableName,
     this.selectedWaiterName,
     this.selectOperator,
+    this.selectedShiftName,
     this.operatorShared,
     this.sharedOrderData,
     this.isLoading = false,
@@ -118,8 +123,13 @@ class OrderViewViewState extends State<OrderViewView> {
   void refreshOrders() {
     if (!mounted || !context.mounted) return;
     context.read<OrderTodayBloc>().add(
-          OrderTodayList(todayDate, todayDate, widget.selectedTableName ?? "",
-              widget.selectedWaiterName ?? "", widget.selectOperator ?? ""),
+          OrderTodayList(
+              todayDate,
+              todayDate,
+              widget.selectedTableName ?? "",
+              widget.selectedWaiterName ?? "",
+              widget.selectOperator ?? "",
+              widget.selectedShiftName ?? ""),
         );
   }
 
@@ -774,7 +784,7 @@ class OrderViewViewState extends State<OrderViewView> {
             showToast("${deleteOrderModel.message}", context, color: true);
             context
                 .read<OrderTodayBloc>()
-                .add(OrderTodayList(todayDate, todayDate, "", "", ""));
+                .add(OrderTodayList(todayDate, todayDate, "", "", "", ""));
           } else {
             showToast("${deleteOrderModel.message}", context, color: false);
           }
@@ -1173,7 +1183,8 @@ class OrderViewViewState extends State<OrderViewView> {
                       todayDate,
                       widget.selectedTableName ?? "",
                       widget.selectedWaiterName ?? "",
-                      widget.selectOperator ?? ""),
+                      widget.selectOperator ?? "",
+                      widget.selectedShiftName ?? ""),
                 );
             // if (shouldPrintReceipt == true &&
             //     updateGenerateOrderModel.message != null) {
